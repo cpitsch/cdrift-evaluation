@@ -1,0 +1,79 @@
+Algorithm/Options,Log,Window Size,Max Adaptive Window,Detected Changepoints,Actual Changepoints for Log,F1-Score,Duration
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,600,1200,"[991, 2081]","[999, 1999]",1.0,00:00:31
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,300,600,"[966, 2043]","[999, 1999]",1.0,00:01:04
+Process Graph Metrics,Atomic_Size2_Loop_5,600,1200,"[1064, 2167]","[999, 1999]",1.0,00:00:51
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,400,800,"[1092, 2050]","[999, 1999]",1.0,00:01:27
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,300,600,"[1021, 1978]","[999, 1999]",1.0,00:00:19
+Process Graph Metrics,Atomic_Size2_SerialMove_5,100,200,[1066],"[999, 1999]",0.6666666666666666,00:00:08
+Process Graph Metrics,Atomic_Size2_Loop_5,400,800,"[1051, 2116]","[999, 1999]",1.0,00:00:59
+Process Graph Metrics,Atomic_Size2_Swap_5,200,400,[],"[999, 1999]",,00:00:10
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,200,400,"[993, 2031]","[999, 1999]",1.0,00:00:29
+Process Graph Metrics,Atomic_Size2_Loop_5,200,400,"[1022, 2174]","[999, 1999]",1.0,00:00:21
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,400,800,"[982, 2035]","[999, 1999]",1.0,00:00:37
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,100,200,[1930],"[999, 1999]",0.6666666666666666,00:00:17
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,500,1000,[1093],"[999, 1999]",0.6666666666666666,00:02:30
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,100,200,[1002],"[999, 1999]",0.6666666666666666,00:00:18
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,100,200,[998],"[999, 1999]",0.6666666666666666,00:00:09
+Process Graph Metrics,Atomic_Size2_Skip_5,500,1000,[1383],"[999, 1999]",,00:00:45
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,500,1000,"[963, 2146]","[999, 1999]",1.0,00:01:33
+Process Graph Metrics,Atomic_Size2_Frequency_5,300,600,"[1021, 1974]","[999, 1999]",1.0,00:01:13
+Process Graph Metrics,Atomic_Size2_Frequency_5,200,400,"[1022, 1988]","[999, 1999]",1.0,00:00:26
+Process Graph Metrics,Atomic_Size2_Skip_5,200,400,[2053],"[999, 1999]",0.6666666666666666,00:00:09
+Process Graph Metrics,Atomic_Size2_Frequency_5,100,200,[986],"[999, 1999]",0.6666666666666666,00:00:05
+Process Graph Metrics,Atomic_Size2_SerialMove_5,600,1200,[1056],"[999, 1999]",0.6666666666666666,00:00:53
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,400,800,"[981, 2034]","[999, 1999]",1.0,00:00:37
+Process Graph Metrics,Atomic_Size2_Substitute_5,600,1200,"[1104, 2088]","[999, 1999]",1.0,00:01:34
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,300,600,"[997, 1857]","[999, 1999]",1.0,00:01:04
+Process Graph Metrics,Atomic_Size2_SerialMove_5,400,800,[1056],"[999, 1999]",0.6666666666666666,00:01:03
+Process Graph Metrics,Atomic_Size2_SerialMove_5,300,600,[1099],"[999, 1999]",0.6666666666666666,00:00:27
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,400,800,"[1092, 2165]","[999, 1999]",1.0,00:01:07
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,200,400,"[1072, 2052]","[999, 1999]",1.0,00:00:40
+Process Graph Metrics,Atomic_Size2_SerialMove_5,200,400,[1023],"[999, 1999]",0.6666666666666666,00:00:25
+Process Graph Metrics,Atomic_Size2_Substitute_5,300,600,[1036],"[999, 1999]",0.6666666666666666,00:00:20
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,200,400,"[945, 2005]","[999, 1999]",1.0,00:00:22
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,600,1200,"[993, 2083]","[999, 1999]",1.0,00:00:33
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,200,400,[991],"[999, 1999]",0.6666666666666666,00:00:32
+Process Graph Metrics,Atomic_Size2_Frequency_5,400,800,"[1013, 2071]","[999, 1999]",1.0,00:00:28
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,100,200,[1999],"[999, 1999]",0.6666666666666666,00:00:22
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,100,200,[],"[999, 1999]",,00:00:30
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,400,800,"[1085, 2123]","[999, 1999]",1.0,00:00:21
+Process Graph Metrics,Atomic_Size2_Frequency_5,500,1000,"[1014, 2109]","[999, 1999]",1.0,00:00:25
+Process Graph Metrics,Atomic_Size2_Substitute_5,500,1000,"[1104, 2088]","[999, 1999]",1.0,00:01:33
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,600,1200,"[970, 2058]","[999, 1999]",1.0,00:00:25
+Process Graph Metrics,Atomic_Size2_Skip_5,400,800,[2053],"[999, 1999]",0.6666666666666666,00:00:10
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,300,600,[970],"[999, 1999]",0.6666666666666666,00:00:57
+Process Graph Metrics,Atomic_Size2_ParallelToSequence_5,500,1000,"[993, 2083]","[999, 1999]",1.0,00:00:36
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,500,1000,"[1086, 2056]","[999, 1999]",1.0,00:01:16
+Process Graph Metrics,Atomic_Size2_Swap_5,100,200,[],"[999, 1999]",,00:00:07
+Process Graph Metrics,Atomic_Size2_Substitute_5,200,400,"[987, 2038]","[999, 1999]",1.0,00:00:31
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,200,400,"[940, 2158]","[999, 1999]",1.0,00:00:34
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,100,200,[],"[999, 1999]",,00:00:15
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,500,1000,"[991, 2081]","[999, 1999]",1.0,00:00:33
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,600,1200,"[1099, 2179]","[999, 1999]",1.0,00:00:10
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,100,200,[],"[999, 1999]",,00:00:08
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,300,600,"[1079, 2063]","[999, 1999]",1.0,00:00:13
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,200,400,[1055],"[999, 1999]",0.6666666666666666,00:00:33
+Process Graph Metrics,Atomic_Size2_ConditionalMove_5,500,1000,"[1099, 2179]","[999, 1999]",1.0,00:00:10
+Process Graph Metrics,Atomic_Size2_SerialMove_5,500,1000,[1056],"[999, 1999]",0.6666666666666666,00:00:58
+Process Graph Metrics,Atomic_Size2_Skip_5,300,600,[2045],"[999, 1999]",0.6666666666666666,00:01:51
+Process Graph Metrics,Atomic_Size2_Loop_5,300,600,[1022],"[999, 1999]",0.6666666666666666,00:00:18
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,600,1200,[1093],"[999, 1999]",0.6666666666666666,00:02:42
+Process Graph Metrics,Atomic_Size2_Skip_5,100,200,[],"[999, 1999]",,00:00:08
+Process Graph Metrics,Atomic_Size2_Swap_5,600,1200,[],"[999, 1999]",,00:00:11
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,200,400,"[1014, 2005]","[999, 1999]",1.0,00:00:30
+Process Graph Metrics,Atomic_Size2_Skip_5,600,1200,[1383],"[999, 1999]",,00:00:42
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,600,1200,"[978, 2146]","[999, 1999]",1.0,00:00:57
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,500,1000,"[1009, 2104]","[999, 1999]",1.0,00:01:13
+Process Graph Metrics,Atomic_Size2_Swap_5,400,800,[],"[999, 1999]",,00:00:12
+Process Graph Metrics,Atomic_Size2_ConditionalToSequence_5,400,800,"[1009, 2067]","[999, 1999]",1.0,00:00:58
+Process Graph Metrics,Atomic_Size2_Substitute_5,100,200,[987],"[999, 1999]",0.6666666666666666,00:00:54
+Process Graph Metrics,Atomic_Size2_Swap_5,500,1000,[],"[999, 1999]",,00:00:13
+Process Graph Metrics,Atomic_Size2_Swap_5,300,600,[],"[999, 1999]",,00:00:13
+Process Graph Metrics,Atomic_Size2_SerialRemoval_5,400,800,"[968, 2121]","[999, 1999]",1.0,00:01:28
+Process Graph Metrics,Atomic_Size2_Loop_5,500,1000,"[1064, 2167]","[999, 1999]",1.0,00:01:00
+Process Graph Metrics,Atomic_Size2_ParallelMove_5,300,600,"[926, 1946]","[999, 1999]",1.0,00:00:17
+Process Graph Metrics,Atomic_Size2_ParallelRemoval_5,300,600,"[1044, 2063]","[999, 1999]",1.0,00:00:24
+Process Graph Metrics,Atomic_Size2_Substitute_5,400,800,"[1119, 2157]","[999, 1999]",1.0,00:00:31
+Process Graph Metrics,Atomic_Size2_Frequency_5,600,1200,"[1014, 2109]","[999, 1999]",1.0,00:00:22
+Process Graph Metrics,Atomic_Size2_ConditionalRemoval_5,600,1200,"[1086, 2056]","[999, 1999]",1.0,00:00:59
+Process Graph Metrics,Atomic_Size2_Loop_5,100,200,[1967],"[999, 1999]",0.6666666666666666,00:00:18

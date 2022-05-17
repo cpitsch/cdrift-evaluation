@@ -1,0 +1,79 @@
+Algorithm/Options,Log,Window Size,Detected Changepoints,Actual Changepoints for Log,F1-Score,Duration
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,100,"[943, 1898, 2518]","[999, 1999]",0.8,00:05:32
+Earth Mover's Distance,Atomic_Size2_Skip_5,100,"[962, 1943]","[999, 1999]",1.0,00:05:18
+Earth Mover's Distance,Atomic_Size2_Frequency_5,600,"[953, 1939]","[999, 1999]",1.0,00:21:13
+Earth Mover's Distance,Atomic_Size2_Loop_5,200,"[952, 1314, 1935]","[999, 1999]",0.8,00:11:01
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,600,"[955, 1938]","[999, 1999]",1.0,00:36:45
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,300,"[944, 1927, 2458]","[999, 1999]",0.8,00:18:16
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,300,"[949, 1875]","[999, 1999]",1.0,00:17:54
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,400,"[970, 1936]","[999, 1999]",1.0,00:23:39
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,300,"[973, 1954]","[999, 1999]",1.0,00:16:34
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,300,"[913, 1944]","[999, 1999]",1.0,00:17:17
+Earth Mover's Distance,Atomic_Size2_Skip_5,600,"[905, 1212, 1323, 1925]","[999, 1999]",0.6666666666666666,00:36:01
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,100,"[935, 1940]","[999, 1999]",1.0,00:05:25
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,100,"[944, 1932]","[999, 1999]",1.0,00:05:43
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,200,"[390, 952, 1938, 2499]","[999, 1999]",0.6666666666666666,00:11:18
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,400,"[934, 1955]","[999, 1999]",1.0,00:25:19
+Earth Mover's Distance,Atomic_Size2_Loop_5,600,"[945, 1938]","[999, 1999]",1.0,00:36:04
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,200,"[964, 1935, 2500]","[999, 1999]",0.8,00:11:02
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,400,"[952, 1953]","[999, 1999]",1.0,00:24:03
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,500,"[951, 1945]","[999, 1999]",1.0,00:30:29
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,400,"[950, 1918]","[999, 1999]",1.0,00:24:16
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,500,"[912, 1954]","[999, 1999]",1.0,00:28:13
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,500,"[962, 1575, 1937]","[999, 1999]",0.8,00:29:31
+Earth Mover's Distance,Atomic_Size2_Loop_5,500,"[952, 1935]","[999, 1999]",1.0,00:30:12
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,500,"[944, 1956]","[999, 1999]",1.0,00:31:25
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,100,"[942, 1918, 2362]","[999, 1999]",0.8,00:05:20
+Earth Mover's Distance,Atomic_Size2_Frequency_5,200,"[955, 1427, 1939]","[999, 1999]",0.8,00:06:20
+Earth Mover's Distance,Atomic_Size2_Substitute_5,300,"[957, 1953]","[999, 1999]",1.0,00:18:13
+Earth Mover's Distance,Atomic_Size2_Frequency_5,300,"[491, 967, 1938]","[999, 1999]",0.8,00:09:57
+Earth Mover's Distance,Atomic_Size2_Frequency_5,400,"[953, 1945]","[999, 1999]",1.0,00:13:58
+Earth Mover's Distance,Atomic_Size2_Substitute_5,200,"[956, 1946, 2684]","[999, 1999]",0.8,00:11:38
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,100,"[900, 1943]","[999, 1999]",1.0,00:04:52
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,400,"[944, 1927]","[999, 1999]",1.0,00:24:41
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,300,"[962, 1935]","[999, 1999]",1.0,00:17:26
+Earth Mover's Distance,Atomic_Size2_Swap_5,200,"[944, 1944]","[999, 1999]",1.0,00:10:47
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,300,"[955, 1938, 2518]","[999, 1999]",0.8,00:17:48
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,200,"[808, 1403, 1973]","[999, 1999]",0.8,00:11:42
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,400,"[754, 1944, 2195]","[999, 1999]",0.4,00:24:36
+Earth Mover's Distance,Atomic_Size2_Swap_5,100,"[927, 1466, 1944]","[999, 1999]",0.8,00:05:07
+Earth Mover's Distance,Atomic_Size2_ParallelRemoval_5,600,"[1000, 1899]","[999, 1999]",1.0,00:35:38
+Earth Mover's Distance,Atomic_Size2_Swap_5,400,"[949, 1944]","[999, 1999]",1.0,00:23:13
+Earth Mover's Distance,Atomic_Size2_Skip_5,500,"[939, 1190, 1945]","[999, 1999]",0.8,00:30:01
+Earth Mover's Distance,Atomic_Size2_Loop_5,100,"[555, 910, 1618, 1935]","[999, 1999]",0.6666666666666666,00:05:09
+Earth Mover's Distance,Atomic_Size2_Swap_5,500,"[929, 1944]","[999, 1999]",1.0,00:29:08
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,100,"[895, 1943]","[999, 1999]",1.0,00:05:34
+Earth Mover's Distance,Atomic_Size2_Substitute_5,400,"[957, 1932]","[999, 1999]",1.0,00:24:26
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,200,"[897, 1954]","[999, 1999]",1.0,00:11:51
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,200,"[943, 1927, 2544]","[999, 1999]",0.8,00:11:31
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,600,"[957, 1945]","[999, 1999]",1.0,00:35:30
+Earth Mover's Distance,Atomic_Size2_Loop_5,300,"[948, 1493, 1935]","[999, 1999]",0.8,00:17:27
+Earth Mover's Distance,Atomic_Size2_Swap_5,300,"[949, 1944]","[999, 1999]",1.0,00:16:57
+Earth Mover's Distance,Atomic_Size2_Skip_5,200,"[958, 1823, 2044, 2338, 2585]","[999, 1999]",0.5714285714285715,00:11:34
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,500,"[944, 1926]","[999, 1999]",1.0,00:32:06
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,600,"[978, 1983]","[999, 1999]",1.0,00:35:00
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,600,"[913, 1950]","[999, 1999]",1.0,00:38:47
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,100,"[906, 1949, 2709]","[999, 1999]",0.8,00:05:34
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,500,"[955, 1938]","[999, 1999]",1.0,00:31:11
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,200,"[947, 1927]","[999, 1999]",1.0,00:11:22
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,200,"[971, 1950, 2444]","[999, 1999]",0.8,00:10:21
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,400,"[955, 1938]","[999, 1999]",1.0,00:24:28
+Earth Mover's Distance,Atomic_Size2_Loop_5,400,"[934, 1926]","[999, 1999]",1.0,00:24:00
+Earth Mover's Distance,Atomic_Size2_Frequency_5,500,"[953, 1939]","[999, 1999]",1.0,00:17:55
+Earth Mover's Distance,Atomic_Size2_Skip_5,300,"[957, 1473, 1934]","[999, 1999]",0.8,00:18:49
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,600,"[950, 1918]","[999, 1999]",1.0,00:38:17
+Earth Mover's Distance,Atomic_Size2_Frequency_5,100,"[931, 1393, 1938]","[999, 1999]",0.8,00:03:21
+Earth Mover's Distance,Atomic_Size2_ConditionalToSequence_5,300,"[896, 1923]","[999, 1999]",1.0,00:21:19
+Earth Mover's Distance,Atomic_Size2_SerialMove_5,100,"[390, 955, 1938, 2438]","[999, 1999]",0.6666666666666666,00:06:19
+Earth Mover's Distance,Atomic_Size2_SerialRemoval_5,200,"[956, 1949]","[999, 1999]",1.0,00:12:31
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,500,"[850, 1963]","[999, 1999]",1.0,00:34:09
+Earth Mover's Distance,Atomic_Size2_Substitute_5,100,"[563, 955, 1926]","[999, 1999]",0.8,00:05:01
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,600,"[1944, 2190]","[999, 1999]",0.5,00:37:43
+Earth Mover's Distance,Atomic_Size2_ConditionalRemoval_5,400,"[953, 1948]","[999, 1999]",1.0,00:20:29
+Earth Mover's Distance,Atomic_Size2_Substitute_5,500,"[956, 1954]","[999, 1999]",1.0,00:28:19
+Earth Mover's Distance,Atomic_Size2_ConditionalMove_5,600,"[944, 1927]","[999, 1999]",1.0,00:32:55
+Earth Mover's Distance,Atomic_Size2_ParallelToSequence_5,300,"[868, 1948, 2199, 2490]","[999, 1999]",0.6666666666666666,00:15:47
+Earth Mover's Distance,Atomic_Size2_ParallelMove_5,500,"[937, 1918]","[999, 1999]",1.0,00:22:22
+Earth Mover's Distance,Atomic_Size2_Swap_5,600,"[944, 1944]","[999, 1999]",1.0,00:25:34
+Earth Mover's Distance,Atomic_Size2_Skip_5,400,"[957, 2043]","[999, 1999]",1.0,00:16:56
+Earth Mover's Distance,Atomic_Size2_Substitute_5,600,"[958, 1954]","[999, 1999]",1.0,00:25:37

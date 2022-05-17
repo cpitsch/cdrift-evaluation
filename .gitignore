@@ -1,0 +1,5 @@
+# Ignore Sample Logs Folder due to large file sizes.
+Sample\ Logs/*
+
+# Ignore PyCache
+__pycache__/*
