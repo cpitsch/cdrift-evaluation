@@ -160,9 +160,9 @@ def _getActivityNames_LogList(logs:List[EventLog], activityName_key:str=xes.DEFA
     ret.sort()
     return ret
 
-def importLogSilent(logpath):
+def importLog(logpath, verbose:bool=True):
     variant = xes_importer.Variants.ITERPARSE
-    parameters = {variant.value.Parameters.SHOW_PROGRESS_BAR: False}
+    parameters = {variant.value.Parameters.SHOW_PROGRESS_BAR: verbose}
     return xes_importer.apply(logpath, variant=variant, parameters=parameters)
 
 def getTraceLog(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY):

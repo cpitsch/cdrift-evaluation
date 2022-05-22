@@ -157,7 +157,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, position=None):
     # rc = ts.extractRelationTypeCount(logs)
     # re = ts.extractRelationEntropy(logs, rc=rc) # Use the previously calculated rc as opposed to calculating it anew in the RE Method
 
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
     # log = xes_importer.apply(filepath)
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
@@ -242,7 +242,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, position=None):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
     PVAL = 0.55 #0.65
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
     
@@ -332,7 +332,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
 
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
@@ -370,7 +370,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
 
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
@@ -402,7 +402,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
 
 def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, position=None):
     csv_name = "evaluation_results.csv"
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     # savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
@@ -433,7 +433,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, posi
 def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, position):
     # candidateCPDetection is independent of eps, so we can use the calculated candidates for multiple eps!
     csv_name = "evaluation_results.csv"
-    log = helpers.importLogSilent(filepath)
+    log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
