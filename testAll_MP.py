@@ -148,7 +148,7 @@ def findMaxima(signal, trim:int=0):
     # return find_peaks(signal, width=80)[0] # Used for Earthmover Distance; The distances have a different nature than minima so prominence is ignored
     return [x+trim for x in peaks] # Correct the found indices, these indices count from the beginning of the trimmed version instead of from the beginning of the untrimmed version (which we want)
 
-def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, position=None):
+def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
 
@@ -203,8 +203,8 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, position=None):
     durStr_WC = calcDurFromSeconds(wc_dur)
     # Save the results #
 
-    plotPvals(pvals_j,cp_j,[999,1999], Path(res_path,f"{savepath}_J"), "Trace Number", "Mean P-Value for all Activity Pairs")
-    plotPvals(pvals_wc,cp_wc,[999,1999], Path(res_path,f"{savepath}_WC"), "Trace Number", "Mean P-Value for all Activity Pairs")
+    plotPvals(pvals_j,cp_j,cp_locations, Path(res_path,f"{savepath}_J"), "Trace Number", "Mean P-Value for all Activity Pairs")
+    plotPvals(pvals_wc,cp_wc,cp_locations, Path(res_path,f"{savepath}_WC"), "Trace Number", "Mean P-Value for all Activity Pairs")
     np.save(Path(res_path,f"npy/{savepath}_J"), pvals_j, allow_pickle=True)
     np.save(Path(res_path,f"npy/{savepath}_WC"), pvals_wc, allow_pickle=True)
 
@@ -214,8 +214,8 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, position=None):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_j,
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_j, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_j, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr_J
     }, ignore_index=True)
 
@@ -224,24 +224,17 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, position=None):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_wc,
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_wc, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_wc, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
     progress_j_wc.close()
 
-    # RE and RC
-    # We, just as in the Paper by Bose et al., split the log into sublogs with 50 traces each (resulting in 60 sublogs only)
-    # logs = split.divideLogCaseGroups(log, 50)
-    # rc = ts.extractRelationTypeCount(logs)
-    # re = ts.extractRelationEntropy(logs, rc=rc)
-
-    
-def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, position=None):
+def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position=None):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
-    PVAL = 0.55 #0.65
+    PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
@@ -299,10 +292,11 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, position=None):
 
     durStr_J = calcDurFromSeconds(j_dur)
     durStr_WC = calcDurFromSeconds(wc_dur)
-    # Save Results #
-        
-    plotPvals(rb_j_pvals, rb_j_cp, [999,1999], Path(res_path,f"{savepath}_J_RecursiveBisection"), "Trace Number", "PValue")
-    plotPvals(rb_wc_pvals, rb_wc_cp, [999,1999], Path(res_path,f"{savepath}_WC_RecursiveBisection"), "Trace Number", "PValue")
+
+
+    # Save Results #    
+    plotPvals(rb_j_pvals, rb_j_cp, cp_locations, Path(res_path,f"{savepath}_J_RecursiveBisection"), "Trace Number", "PValue")
+    plotPvals(rb_wc_pvals, rb_wc_cp, cp_locations, Path(res_path,f"{savepath}_WC_RecursiveBisection"), "Trace Number", "PValue")
     np.save(Path(res_path,f"npy/{savepath}_J"), rb_j_pvals, allow_pickle=True)
     np.save(Path(res_path,f"npy/{savepath}_WC"), rb_wc_pvals, allow_pickle=True)
 
@@ -312,8 +306,8 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, position=None):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_j_cp,
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_j_cp, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_j_cp, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr_J
     }, ignore_index=True)
     resDF = resDF.append({
@@ -321,14 +315,14 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, position=None):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_wc_cp,
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_wc_cp, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_wc_cp, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
     progress_j_wc_rb.close()
 
-def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
+def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
 
@@ -343,7 +337,6 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
     traces = earthmover.extractTraces(log)
     em_dists = earthmover.calculateDistSeries(traces, WINDOW_SIZE, progressBar_pos=LINE_NR)
 
-    # cp_em = argrelmax(em_dists, order=250)[0]
     cp_em = findMaxima(em_dists, WINDOW_SIZE)
 
     endTime = default_timer()
@@ -352,7 +345,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
     # Save Results #
     res_folder = Path(res_path, "EarthMover")
 
-    plotPvals(em_dists,cp_em,[999,1999],Path(res_path,f"{savepath}_EarthMover_Distances"), autoScale=True)
+    plotPvals(em_dists,cp_em,cp_locations,Path(res_path,f"{savepath}_EarthMover_Distances"), autoScale=True)
     np.save(Path(res_path,f"npy/{savepath}_EarthMover_Distances"), em_dists, allow_pickle=True)
     resDF = pd.read_csv(Path(res_path,csv_name))
     resDF = resDF.append({
@@ -360,13 +353,13 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_em, # Visual Inspection
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG,detected=cp_em, known=[999,1999], zero_division=np.NaN), # As visual inspection is required (for the time being)
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG,detected=cp_em, known=cp_locations, zero_division=np.NaN), # As visual inspection is required (for the time being)
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
 
-def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
+def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
 
@@ -378,7 +371,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
     startTime = default_timer()
 
     cp_runs, chis_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=True, progressBar_pos=LINE_NR)
-    actual_cp = [999,1999]
+    actual_cp = cp_locations
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -394,13 +387,13 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, position):
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_runs,
-        'Actual Changepoints for Log': [999,1999],
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_runs, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_runs, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
 
-def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, position=None):
+def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_locations, position=None):
     csv_name = "evaluation_results.csv"
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -410,7 +403,6 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, posi
     startTime = default_timer()
 
     cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=0.05, progressBarPosition=position)
-    actual_cp = [999,1999]
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -424,13 +416,13 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, posi
         'Window Size': WINDOW_SIZE,
         'Max Adaptive Window': ADAP_MAX_WIN,
         'Detected Changepoints': cp,
-        'Actual Changepoints for Log': actual_cp,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=[999,1999], zero_division=np.NaN),
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
 
-def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, position):
+def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, position):
     # candidateCPDetection is independent of eps, so we can use the calculated candidates for multiple eps!
     csv_name = "evaluation_results.csv"
     log = helpers.importLog(filepath, verbose=False)
@@ -454,8 +446,8 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, position):
             'MRID': mrid,
             'Epsilon': eps,
             'Detected Changepoints': cp,
-            'Actual Changepoints for Log': [999,1999],
-            'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=[999,1999], zero_division=np.NaN),
+            'Actual Changepoints for Log': cp_locations,
+            'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=cp_locations, zero_division=np.NaN),
             'Duration': durStr
         }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -605,25 +597,33 @@ def main():
     F1_LAG = 200
 
     # Directory for Logs to test
-    root_dir = None
-    print(args.logs)
-    print(args.logs.lower())
+    logPaths_Changepoints = None
     if args.logs.lower() == "noiseless":
         root_dir = Path("Sample Logs","Noiseless")
+        # Get all files in the directory
+        logPaths_Changepoints = [
+            (item.as_posix(), [999,1999]) # Path to the event log, and the change point locations in it
+            for item in root_dir.iterdir()
+            if item.is_file() and item.suffixes in [[".xes"], [".xes", ".gz"]] # Only work with XES files (.xes) and compressed XES Files (.xes.gz)
+        ]
     elif args.logs.lower() == "noisy":
         root_dir = Path("Sample Logs","Noiseful")
+        # Get all files in the directory
+        logPaths_Changepoints = [
+            (item.as_posix(), [999,1999]) # Path to the event log, and the change point locations in it
+            for item in root_dir.iterdir()
+            if item.is_file() and item.suffixes in [[".xes"], [".xes", ".gz"]] # Only work with XES files (.xes) and compressed XES Files (.xes.gz)
+        ]
     elif args.logs.lower() == "approaches":
         root_dir = Path("Sample Logs","Misc Approaches")
+        # Here a manual mapping from log to change point is necessary because they are always at different locations
+        logPaths_Changepoints = [
+            # Caution: Counting begins at 0
+            ("Sample Logs/Misc Approaches/cpnToolsSimulationLog.xes.gz", [1199, 2399, 3599, 4799]),# A change every 1200 cases, 6000 cases in total (Skipping 5999 because a change on the last case doesnt make sense)
+            ("Sample Logs/Misc Approaches/log_long_term_dep.xes.gz", [1999])# Change at the 2000th case
+        ]
 
-    # Get all files in the directory
-    logPaths = {
-        item.as_posix()
-        for item in root_dir.iterdir()
-        if item.is_file() and item.suffixes in [[".xes"], [".xes", ".gz"]] # Only work with XES files (.xes) and compressed XES Files (.xes.gz)
-    }
 
-
-    # CSV_NAME = Path(args.output).name
     RESULTS_PATH = Path(args.output)
 
     init_dir(RESULTS_PATH)
@@ -643,12 +643,12 @@ def main():
         for mrid in mrids
     ]
 
-    bose_args         =  [(path, winSize,               Path(RESULTS_PATH,"Bose"), F1_LAG)             for path in logPaths for winSize             in windowSizes                                  ]
-    martjushev_args   =  [(path, winSize,               Path(RESULTS_PATH,"Martjushev"), F1_LAG)       for path in logPaths for winSize             in windowSizes                                  ]
-    em_args           =  [(path, winSize,               Path(RESULTS_PATH, "Earthmover"), F1_LAG)      for path in logPaths for winSize             in windowSizes                                  ]
-    maaradji_args     =  [(path, winSize,               Path(RESULTS_PATH, "Maaradji"), F1_LAG)        for path in logPaths for winSize             in windowSizes                                  ]
-    pgraph_args       =  [(path, winSize, adapMaxWin,   Path(RESULTS_PATH, "ProcessGraph"), F1_LAG)    for path in logPaths for winSize, adapMaxWin in zip(windowSizes, maxWindowSizes)             ]
-    zhengDBSCAN_args  =  [(path, mrid,    epsList,      Path(RESULTS_PATH, "Zheng"), F1_LAG)           for path in logPaths for mrid,epsList        in eps_mrid_pairs                               ]
+    bose_args         =  [(path, winSize,               Path(RESULTS_PATH,"Bose"), F1_LAG, cp_locations)             for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    martjushev_args   =  [(path, winSize,               Path(RESULTS_PATH,"Martjushev"), F1_LAG, cp_locations)       for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    em_args           =  [(path, winSize,               Path(RESULTS_PATH, "Earthmover"), F1_LAG, cp_locations)      for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    maaradji_args     =  [(path, winSize,               Path(RESULTS_PATH, "Maaradji"), F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    pgraph_args       =  [(path, winSize, adapMaxWin,   Path(RESULTS_PATH, "ProcessGraph"), F1_LAG, cp_locations)    for path, cp_locations in logPaths_Changepoints for winSize, adapMaxWin in zip(windowSizes, maxWindowSizes)             ]
+    zhengDBSCAN_args  =  [(path, mrid,    epsList,      Path(RESULTS_PATH, "Zheng"), F1_LAG, cp_locations)           for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                               ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
         + ([ ("zhengDBSCAN", args)   for args in zhengDBSCAN_args ] if DO_ZHENG          else [])
