@@ -7,8 +7,8 @@ parser.add_argument("-O", "--overwrite", required=False, help="If present and th
 parser.add_argument("-o", "--output", required=False, type=str, default="testAll/", help="Specifies the output Directory")
 parser.add_argument("-npp", "--no-parallel-progress", required=False, help="If present, the progress bars will all be on the same line, overwriting eachother.", action="store_true")
 parser.add_argument("-sh", "--shuffle", required=False, help="If present, the list of tasks is shuffled. This means the approaches are not worked through one-by-one. Also makes processes overwriting eachother in output file less likely. Specific protection for this is coming soon.", action="store_true")
-parser.add_argument("-n", "--noisy", required=False, help="If present, evaluation is performed on noisy event logs. Otherwise noiseless event logs", action="store_true")
-
+# parser.add_argument("-n", "--noisy", required=False, help="If present, evaluation is performed on noisy event logs. Otherwise noiseless event logs", action="store_true")
+parser.add_argument("-l", "--logs", required=False, type=str, default="noiseless", help="Which set of event logs to use. Defaults to \"noiseless\"", choices=["noiseless", "noisy", "approaches"])
 # parser.add_argument("--skipBose", required=False, help="If present, Bose will not be calculated, and previous computations will not be overwritten", action="store_true")
 # parser.add_argument("--skipMartjushev", required=False, help="If present, Martjushev will not be calculated, and previous computations will not be overwritten", action="store_true")
 # parser.add_argument("--skipMaaradji", required=False, help="If present, Maaradji will not be calculated, and previous computations will not be overwritten", action="store_true")
@@ -139,6 +139,7 @@ def findMinima(signal,trim:int=0):
     # Only send the trimmed version into the peak-finding algorithm; Because the initial, and final zero-values are the default values, and no comparison was made there, so it doesn't count for the peak finding
     peaks= find_peaks(-signal[trim:len(signal)-trim], width=80, prominence=0.1)[0]
     return [x+trim for x in peaks] # Add the window that was lost from the beginning
+
 def findMaxima(signal, trim:int=0):
     """
         Detects maxima in a signal
@@ -603,48 +604,24 @@ def main():
     #Evaluation Parameters
     F1_LAG = 200
 
-    # Logs to Test
-    if not args.noisy:
-        logPaths = { # These are the logs we are going to test
-            "Sample Logs/Noiseless/Atomic_Size2_ConditionalMove.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_ConditionalRemoval.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_ConditionalToSequence.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_Frequency.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_Loop.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_ParallelMove.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_ParallelRemoval.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_ParallelToSequence.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_SerialMove.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_SerialRemoval.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_Skip.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_Substitute.xes",
-            # "Sample Logs/Noiseless/Atomic_Size2_Swap.xes",
-        }# CPN Logs have drift every 1000 traces, i.e. at index 999 and at index 1999
-    else:
-        logPaths = { # These are the logs we are going to test
-            "Sample Logs/Noiseful/Atomic_Size2_ConditionalMove_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_ConditionalRemoval_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_ConditionalToSequence_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_Frequency_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_Loop_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_ParallelMove_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_ParallelRemoval_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_ParallelToSequence_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_SerialMove_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_SerialRemoval_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_Skip_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_Substitute_5.xes",
-            "Sample Logs/Noiseful/Atomic_Size2_Swap_5.xes",
-        }# CPN Logs have drift every 1000 traces, i.e. at index 999 and at index 1999
-    # This is kind of convoluted because I want to print out all wrong paths before exiting
-    # Check if all the Logs exist #
-    doPathsExist = [(exists(path),path) for path in logPaths]
-    if not all([val for val,_ in doPathsExist]):
-        print("Nonexistent paths:")
-        for doesExist, path in doPathsExist:
-            if not doesExist:
-                print(f"\t{path}")
-        sys.exit()
+    # Directory for Logs to test
+    root_dir = None
+    print(args.logs)
+    print(args.logs.lower())
+    if args.logs.lower() == "noiseless":
+        root_dir = Path("Sample Logs","Noiseless")
+    elif args.logs.lower() == "noisy":
+        root_dir = Path("Sample Logs","Noiseful")
+    elif args.logs.lower() == "approaches":
+        root_dir = Path("Sample Logs","Misc Approaches")
+
+    # Get all files in the directory
+    logPaths = {
+        item.as_posix()
+        for item in root_dir.iterdir()
+        if item.is_file() and item.suffixes in [[".xes"], [".xes", ".gz"]] # Only work with XES files (.xes) and compressed XES Files (.xes.gz)
+    }
+
 
     # CSV_NAME = Path(args.output).name
     RESULTS_PATH = Path(args.output)
@@ -653,14 +630,14 @@ def main():
 
     # Parameter Settings #
     # Window Sizes that we test
-    windowSizes    = [100]#, 200, 300, 400, 500,  600        ]
-    maxWindowSizes = [200]#, 400, 600, 800, 1000, 1200       ] 
+    windowSizes    = [100, 200, 300, 400, 500,  600        ]
+    maxWindowSizes = [200, 400, 600, 800, 1000, 1200       ] 
     
     # valuePairs     = itertools.product(logPaths, windowSizes)
     
     # mrids = [100,200,300,400,500,750]
-    mrids = [100]#,250,500]
-    eps_modifiers = [0.1]#,0.2,0.3]
+    mrids = [100,250,500]
+    eps_modifiers = [0.1,0.2,0.3]
     eps_mrid_pairs = [
         (mrid,[mEps*mrid  for mEps in eps_modifiers]) 
         for mrid in mrids
