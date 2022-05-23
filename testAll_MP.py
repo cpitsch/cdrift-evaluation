@@ -675,3 +675,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# Example Run commands for each Log-Type
+    # python .\testAll_MP.py -s 4 -o .\testAll_ApproachLogs\ -sh -l approaches -O
+    # python .\testAll_MP.py -s 4 -o .\testAll\ -sh -l noiseless -O
+    # python .\testAll_MP.py -s 4 -o .\testAll_Noisy\ -sh -l noisy -O

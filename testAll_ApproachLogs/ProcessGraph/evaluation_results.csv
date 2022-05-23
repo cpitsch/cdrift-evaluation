@@ -1,0 +1,13 @@
+Algorithm/Options,Log,Window Size,Max Adaptive Window,Detected Changepoints,Actual Changepoints for Log,F1-Score,Duration
+Process Graph Metrics,log_long_term_dep,600,1200,[],[1999],,00:00:04
+Process Graph Metrics,log_long_term_dep,400,800,[],[1999],,00:00:04
+Process Graph Metrics,cpnToolsSimulationLog,300,600,"[1362, 5001]","[1199, 2399, 3599, 4799]",0.3333333333333333,00:00:10
+Process Graph Metrics,cpnToolsSimulationLog,200,400,"[1323, 3662]","[1199, 2399, 3599, 4799]",0.6666666666666666,00:00:14
+Process Graph Metrics,log_long_term_dep,100,200,[],[1999],,00:00:02
+Process Graph Metrics,cpnToolsSimulationLog,600,1200,"[1353, 2649, 3945, 5241]","[1199, 2399, 3599, 4799]",0.25,00:00:06
+Process Graph Metrics,cpnToolsSimulationLog,100,200,[4846],"[1199, 2399, 3599, 4799]",0.4,00:00:08
+Process Graph Metrics,log_long_term_dep,500,1000,[],[1999],,00:00:04
+Process Graph Metrics,cpnToolsSimulationLog,400,800,"[1323, 2698, 3724, 4914]","[1199, 2399, 3599, 4799]",0.75,00:00:29
+Process Graph Metrics,cpnToolsSimulationLog,500,1000,"[1353, 2649, 3945, 5241]","[1199, 2399, 3599, 4799]",0.25,00:00:06
+Process Graph Metrics,log_long_term_dep,300,600,[461],[1999],,00:00:03
+Process Graph Metrics,log_long_term_dep,200,400,[415],[1999],,00:00:04

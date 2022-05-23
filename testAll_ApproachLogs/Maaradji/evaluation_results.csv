@@ -1,0 +1,13 @@
+Algorithm/Options,Log,Window Size,Detected Changepoints,Actual Changepoints for Log,F1-Score,Duration
+Maaradji Runs,log_long_term_dep,500,[1796],[1999],,00:00:02
+Maaradji Runs,cpnToolsSimulationLog,200,"[545, 1152, 2351, 3496, 4688]","[1199, 2399, 3599, 4799]",0.888888888888889,00:00:23
+Maaradji Runs,cpnToolsSimulationLog,300,"[1097, 2271, 3452, 4608]","[1199, 2399, 3599, 4799]",1.0,00:00:25
+Maaradji Runs,cpnToolsSimulationLog,100,"[1213, 2410, 3576, 4756]","[1199, 2399, 3599, 4799]",1.0,00:00:22
+Maaradji Runs,cpnToolsSimulationLog,500,"[932, 2230, 3334, 4488]","[1199, 2399, 3599, 4799]",0.25,00:00:29
+Maaradji Runs,log_long_term_dep,300,[1894],[1999],1.0,00:00:02
+Maaradji Runs,cpnToolsSimulationLog,400,"[1032, 2208, 3394, 4553]","[1199, 2399, 3599, 4799]",0.5,00:00:27
+Maaradji Runs,log_long_term_dep,400,[1845],[1999],1.0,00:00:03
+Maaradji Runs,log_long_term_dep,600,[1656],[1999],,00:00:03
+Maaradji Runs,log_long_term_dep,100,[],[1999],,00:00:02
+Maaradji Runs,log_long_term_dep,200,[1995],[1999],1.0,00:00:02
+Maaradji Runs,cpnToolsSimulationLog,600,"[886, 2175, 3237, 4422]","[1199, 2399, 3599, 4799]",,00:00:31

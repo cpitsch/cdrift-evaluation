@@ -1,0 +1,13 @@
+Algorithm/Options,Log,Window Size,Detected Changepoints,Actual Changepoints for Log,F1-Score,Duration
+Earth Mover's Distance,log_long_term_dep,200,"[1434, 1965, 3427]",[1999],0.5,00:00:07
+Earth Mover's Distance,cpnToolsSimulationLog,100,"[1193, 1466, 2403, 3596, 5256]","[1199, 2399, 3599, 4799]",0.6666666666666665,00:01:27
+Earth Mover's Distance,log_long_term_dep,100,[3419],[1999],,00:00:04
+Earth Mover's Distance,cpnToolsSimulationLog,300,"[1200, 2394, 3596, 4800]","[1199, 2399, 3599, 4799]",1.0,00:06:55
+Earth Mover's Distance,log_long_term_dep,500,"[1444, 1971, 2585]",[1999],0.5,00:00:12
+Earth Mover's Distance,cpnToolsSimulationLog,200,"[675, 1233, 1435, 1853, 2393, 2946, 3604, 4802, 5262]","[1199, 2399, 3599, 4799]",0.6153846153846153,00:03:42
+Earth Mover's Distance,log_long_term_dep,300,"[1528, 1971, 3182]",[1999],0.5,00:00:10
+Earth Mover's Distance,log_long_term_dep,400,"[1973, 2822, 3238]",[1999],0.5,00:00:13
+Earth Mover's Distance,log_long_term_dep,600,"[1444, 1606, 2018]",[1999],0.5,00:00:14
+Earth Mover's Distance,cpnToolsSimulationLog,400,"[1200, 2393, 3600, 4800]","[1199, 2399, 3599, 4799]",1.0,00:09:46
+Earth Mover's Distance,cpnToolsSimulationLog,500,"[1193, 1723, 2393, 3596, 4220, 4800]","[1199, 2399, 3599, 4799]",0.8,00:10:37
+Earth Mover's Distance,cpnToolsSimulationLog,600,"[1193, 2394, 3600, 4802]","[1199, 2399, 3599, 4799]",1.0,00:11:53
