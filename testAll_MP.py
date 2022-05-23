@@ -7,14 +7,8 @@ parser.add_argument("-O", "--overwrite", required=False, help="If present and th
 parser.add_argument("-o", "--output", required=False, type=str, default="testAll/", help="Specifies the output Directory")
 parser.add_argument("-npp", "--no-parallel-progress", required=False, help="If present, the progress bars will all be on the same line, overwriting eachother.", action="store_true")
 parser.add_argument("-sh", "--shuffle", required=False, help="If present, the list of tasks is shuffled. This means the approaches are not worked through one-by-one. Also makes processes overwriting eachother in output file less likely. Specific protection for this is coming soon.", action="store_true")
-# parser.add_argument("-n", "--noisy", required=False, help="If present, evaluation is performed on noisy event logs. Otherwise noiseless event logs", action="store_true")
+
 parser.add_argument("-l", "--logs", required=False, type=str, default="noiseless", help="Which set of event logs to use. Defaults to \"noiseless\"", choices=["noiseless", "noisy", "approaches"])
-# parser.add_argument("--skipBose", required=False, help="If present, Bose will not be calculated, and previous computations will not be overwritten", action="store_true")
-# parser.add_argument("--skipMartjushev", required=False, help="If present, Martjushev will not be calculated, and previous computations will not be overwritten", action="store_true")
-# parser.add_argument("--skipMaaradji", required=False, help="If present, Maaradji will not be calculated, and previous computations will not be overwritten", action="store_true")
-# parser.add_argument("--skipEM", required=False, help="If present, Earthmover will not be calculated, and previous computations will not be overwritten", action="store_true")
-# parser.add_argument("--skipPG", required=False, help="If present, Process Graph CPD will not be calculated, and previous computations will not be overwritten", action="store_true")
-# parser.add_argument("--skipZheng", required=False, help="If present, the approach by Zheng will not be calculated, and previous computations will not be overwritten", action="store_true")
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -41,8 +35,6 @@ from zheng import applyMultipleEps
 import bose
 import scipy.stats as stats
 import martjushev
-# from extraction import timeseries as ts
-# from localization import algorithms as algs
 
 #Process Graph CPD
 import processGraphMetrics as pm
@@ -61,6 +53,7 @@ from datetime import datetime
 from colorama import Fore
 from tqdm import tqdm
 from pathlib import Path
+
 # From https://stackoverflow.com/a/17303428
 class color:
    PURPLE = '\033[95m'
@@ -135,6 +128,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 def findMinima(signal,trim:int=0):
     """
         Detects minima in a signal
+        Trim takes values off the ends before detecting changes. This is used because of the long 0-Sequences at the beginning and end of the values. This should not influence the detection algorithm, so it is trimmed
     """
     # Only send the trimmed version into the peak-finding algorithm; Because the initial, and final zero-values are the default values, and no comparison was made there, so it doesn't count for the peak finding
     peaks= find_peaks(-signal[trim:len(signal)-trim], width=80, prominence=0.1)[0]
@@ -142,10 +136,10 @@ def findMinima(signal,trim:int=0):
 
 def findMaxima(signal, trim:int=0):
     """
-        Detects maxima in a signal
+        Detects maxima in a signal. 
+        Trim takes values off the ends before detecting changes. This is used because of the long 0-Sequences at the beginning and end of the values. This should not influence the detection algorithm, so it is trimmed
     """
     peaks= find_peaks(signal[trim:len(signal)-trim], width=80)[0]
-    # return find_peaks(signal, width=80)[0] # Used for Earthmover Distance; The distances have a different nature than minima so prominence is ignored
     return [x+trim for x in peaks] # Correct the found indices, these indices count from the beginning of the trimmed version instead of from the beginning of the untrimmed version (which we want)
 
 def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
@@ -154,12 +148,9 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
 
     j_dur = 0
     wc_dur = 0
-    # rc = ts.extractRelationTypeCount(logs)
-    # re = ts.extractRelationEntropy(logs, rc=rc) # Use the previously calculated rc as opposed to calculating it anew in the RE Method
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
-    # log = xes_importer.apply(filepath)
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
     #Extract the average pvalues of the test over all pairs of activities, as Bose et al. do it in the paper
     activities = helpers._getActivityNames(log)
@@ -186,7 +177,6 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
             new_pvals_wc = bose.KSTest_2Sample_SlidingWindow(wc,WINDOW_SIZE)
             wc_dur += default_timer()-wc_start
 
-            #_, new_pvals = algs.MannWhitney_U(j, WINDOW_SIZE, 0.05, return_pvalues=True)
             pvals_j += new_pvals_j
             pvals_wc += new_pvals_wc
             progress_j_wc.update()
@@ -194,15 +184,13 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     pvals_wc = pvals_wc / pow(len(activities),2)
 
     ## Visual Inspection
-    # cp_j = argrelmin(pvals_j, order=250)[0]
-    # cp_wc = argrelmin(pvals_wc, order=250)[0]
     cp_j = findMinima(pvals_j, WINDOW_SIZE)
     cp_wc = findMinima(pvals_wc, WINDOW_SIZE)
 
     durStr_J = calcDurFromSeconds(j_dur)
     durStr_WC = calcDurFromSeconds(wc_dur)
-    # Save the results #
 
+    # Save the results #
     plotPvals(pvals_j,cp_j,cp_locations, Path(res_path,f"{savepath}_J"), "Trace Number", "Mean P-Value for all Activity Pairs")
     plotPvals(pvals_wc,cp_wc,cp_locations, Path(res_path,f"{savepath}_WC"), "Trace Number", "Mean P-Value for all Activity Pairs")
     np.save(Path(res_path,f"npy/{savepath}_J"), pvals_j, allow_pickle=True)
@@ -352,9 +340,9 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Algorithm/Options':"Earth Mover's Distance", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
-        'Detected Changepoints': cp_em, # Visual Inspection
+        'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG,detected=cp_em, known=cp_locations, zero_division=np.NaN), # As visual inspection is required (for the time being)
+        'F1-Score': evaluation.F1_Score(F1_LAG,detected=cp_em, known=cp_locations, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -398,8 +386,6 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
-    # savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
-
     startTime = default_timer()
 
     cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=0.05, progressBarPosition=position)
@@ -408,7 +394,6 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
     durStr = calcDurationString(startTime, endTime)
 
     # Save Results #
-
     resDF = pd.read_csv(Path(res_path,csv_name))
     resDF = resDF.append({
         'Algorithm/Options':"Process Graph Metrics", 
@@ -423,7 +408,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
     resDF.to_csv(Path(res_path,csv_name), index=False)
 
 def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, position):
-    # candidateCPDetection is independent of eps, so we can use the calculated candidates for multiple eps!
+    # candidateCPDetection is independent of eps, so we can calculate the candidates once and use them for multiple eps!
     csv_name = "evaluation_results.csv"
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -453,7 +438,13 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, pos
     resDF.to_csv(Path(res_path,csv_name), index=False)
 
 
-def testSomething(idx, vals):
+def testSomething(idx:int, vals:int):
+    """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
+
+    Args:
+        idx (int): Position-Index for the progress bar of the evaluation
+        vals (Tuple[str,List]): Tuple of name of the approach, and its parameter values
+    """
     name, arguments = vals
 
     if args.no_parallel_progress:
@@ -480,12 +471,7 @@ def init_dir(results_path):
     global DO_MAARADJI
     global DO_PROCESS_GRAPH
     global DO_ZHENG
-    # try:
-    #     os.makedirs(results_path,exist_ok=args.overwrite)
-    # except FileExistsError:
-    #     print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: The folder {results_path} already exists. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
-    # Results_dir is made if any of the algs are done
-    # png, npy folders creeation #
+    
     try:
         if DO_BOSE:
             os.makedirs(Path(results_path,"Bose/npy"), exist_ok=args.overwrite)
@@ -495,8 +481,6 @@ def init_dir(results_path):
             os.makedirs(Path(results_path,"Earthmover/npy"), exist_ok=args.overwrite)
         if DO_MAARADJI:
             os.makedirs(Path(results_path,"Maaradji/npy"), exist_ok=args.overwrite)
-        # os.makedirs(Path(results_path,"ProcessGraph/npy")) # It doesnt save any figures or similar yet.
-        # os.makedirs(Path(results_path,"zheng/npy")) # Also no files generated. Cannot think of any to generate either, also very fast so no real reason to save if you can just calculate
     except FileExistsError:
         print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the output folders already exists in the output directory. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
         sys.exit()
@@ -527,6 +511,7 @@ def init_dir(results_path):
         print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the output folders already exists in the output directory. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
         sys.exit()
     if args.overwrite:
+        # Create Evaluation Result CSV's
         results = pd.DataFrame(
             columns=['Algorithm/Options', 'Log', 'Window Size', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
         )
@@ -633,9 +618,7 @@ def main():
     windowSizes    = [100, 200, 300, 400, 500,  600        ]
     maxWindowSizes = [200, 400, 600, 800, 1000, 1200       ] 
     
-    # valuePairs     = itertools.product(logPaths, windowSizes)
     
-    # mrids = [100,200,300,400,500,750]
     mrids = [100,250,500]
     eps_modifiers = [0.1,0.2,0.3]
     eps_mrid_pairs = [
