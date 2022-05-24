@@ -2,12 +2,13 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import List
+from typing import Dict, List
 import numpy as np
 import pandas as pd
 
 from helpers import calcAvgDuration
 import matplotlib.pyplot as plt
+from deprecated import deprecated
 
 # The calculation of the F1 score as described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
 def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn", verbose:bool=False):
@@ -67,6 +68,7 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
     else:
         f1 = (2*precision*recall)/(precision+recall)
         return f1
+
 # Alias for F1_Score
 f1 = F1_Score
 
@@ -102,8 +104,6 @@ def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_divis
         recall = zero_division
     return (precision, recall)
 
-def annotationError(detected:List[int], known: List[int]):
-    return abs(len(detected)-len(known))
 
 
 
@@ -124,7 +124,6 @@ def getROCData(lag:int, df:pd.DataFrame, undefined_equals=0):
         points.append(  (np.mean(recalls), np.mean(precisions))   )
     return points
 
-
 def plotROC(lag, df:pd.DataFrame, undefined_equals=0):
     import matplotlib.pyplot as plt
     dat = getROCData(lag,df,undefined_equals)
@@ -139,7 +138,16 @@ def plotROC(lag, df:pd.DataFrame, undefined_equals=0):
     plt.show()
 
 def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan):
-    points = []
+    """Calculates the points for a scatterplot, plotting Calculation Time against the achieved F1-Score
+
+    Args:
+        dfs (List[pd.DataFrame]): The dataframe of each approach to be plotted
+        handle_nan_as (_type_, optional): How should an undefined F1-Score (Division by zero) be handled? Defaults to np.nan.
+
+    Returns:
+        List[Dict[]]: A list of points, represented as dictionaries with keys "duration", "f1", and "name"
+    """
+    points:List[Dict] = []
     for df in dfs:
         avgDur = calcAvgDuration(df).seconds
         avgF1 = df["F1-Score"].fillna(handle_nan_as, inplace=False).mean()
@@ -150,11 +158,15 @@ def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan):
         })
     return points
 
-def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan):
-    points = calcScatterData(dfs, handle_nan_as)
-    plotScatterData(points)
 
-def plotScatterData(points):
+def plotScatterData(points: List[Dict], path="../scatter_fig.png", _format="png"):
+    """Plots a list of points (dictionaries in a scatterplot and saves it)
+
+    Args:
+        points (List[Dict]): A list of points, represented as dictionaries with keys "duration", "f1", and "name"
+        path (str, optional): Path where figure should be saved. Defaults to "../scatter_fig.png".
+        _format (str, optional): Format of the saved figure. Defaults to "png".
+    """    
     fig,ax = plt.subplots()
     for point in points:
         ax.scatter(y=[point["f1"]], x=[point["duration"]], label=point["name"])
@@ -163,8 +175,28 @@ def plotScatterData(points):
     ax.set_xlabel("Mean Duration (Minutes)")
     ax.legend(bbox_to_anchor=(1,1), loc="upper left")
     ax.grid(True)
-    plt.savefig("../scatter_fig.png", bbox_inches='tight')
+    plt.savefig(path, bbox_inches='tight', format=_format)
     plt.show()     
+
+def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../scatter_fig.png", _format="png"):
+    """Plots a scatterplot of the F1-Score against the duration of the algorithm, given a list of dataframes for each approach
+
+    Args:
+        dfs (List[pd.DataFrame]): List of dataframes for each approach
+        handle_nan_as (Any, optional): How to handle an undefined F1-Score (Division by zero). Defaults to np.nan.
+        path (str, optional): Path where to save the figure. Defaults to "../scatter_fig.png".
+        _format (str, optional): Format of the Figure. Defaults to "png".
+    """
+    points = calcScatterData(dfs, handle_nan_as)
+    plotScatterData(points)
+
+### Deprecated / Never used Evaluation Metrics ###
+
+@deprecated("This function has never been tested. We recommend not to use it")
+def annotationError(detected:List[int], known: List[int]):
+    return abs(len(detected)-len(known))
+
+@deprecated("This function has never been tested. We recommend not to use it")
 def hausdorff(detected:List[int], known: List[int]):
     return max(
         (
@@ -187,6 +219,7 @@ def hausdorff(detected:List[int], known: List[int]):
         )
     )
 
+@deprecated("This function has never been tested. We recommend not to use it")
 def rand_index(detected:List[int], known: List[int], signal_length:int):
     def _calc_gr_ngr(changepoints: List[int]):
         gr = {(s,t) 
@@ -215,64 +248,4 @@ def rand_index(detected:List[int], known: List[int], signal_length:int):
         ) / (
             signal_length * (signal_length -1)
         )
-
-# def cover(detected:Set[int], known:Set[int], signal):
-#     """
-#         Computes the Covering Metric, C(S,G) for a Partitioning, S, of the Signal according to the algorithm, and the Ground Truth partitioning, G
-#     """
-#     def _jaccard_index(set1:Set, set2:Set):
-#         return len(set1.intersection(set2))/len(set1.union(set2))
-#     #By convention the first index is a Changepoint, as it is the first index of a Population
-#     detected.add(0)
-#     known.add(0)
-#     k_sorted = sorted(known)
-#     det_sorted = sorted(detected)
-#     return 1/len(signal) * sum(
-#         [len(signal[k_sorted[i-1]:k_sorted[i]]) * max(
-#             [   
-#                 _jaccard_index(
-#                     set(signal[k_sorted[i-1]:k_sorted[i]]),
-#                     set(signal[det_sorted[j-1]:det_sorted[j]])
-#                 )
-#                 for j in range(1,len(det_sorted))
-#             ]
-#         )
-        
-#          for i in range(1,len(k_sorted))]
-#     )
-    
-
-# def cover_new(detected:List[int], known:List[int], signal):
-
-#     def _jaccard_index(set1:Set, set2:Set):
-#         return len(set1.intersection(set2))/len(set1.union(set2))
-
-#     # Convert Detected and known to "Regions", i.e. partition the signal based on the changepoints
-#     detected.append(0)
-#     detected = sorted(detected)
-#     detected_partitioned = []
-#     for i in range(len(detected)-1):
-#         detected_partitioned.append(set(signal[detected[i]:detected[i+1]]))
-#     # Add final partition
-#     detected_partitioned.append(set(signal[detected[-1]:]))
-
-#     known.append(0)
-#     known = sorted(known)
-#     known_partitioned = []
-#     for i in range(len(known)-1):
-#         known_partitioned.append(set(signal[known[i]:known[i+1]]))
-#     # Add final partition
-#     known_partitioned.append(set(signal[known[-1]:]))
-
-#     return 1/len(signal) * sum(
-#         len(a)* max(
-#             [
-#                 _jaccard_index(
-#                     a, a_prime
-#                 )
-#                 for a_prime in detected_partitioned
-#             ]
-#         )
-
-#         for a in known_partitioned
-#     )
+    return randindex
