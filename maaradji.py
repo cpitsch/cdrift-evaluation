@@ -43,7 +43,7 @@ def _extractDirectlyFollowsLog(log:EventLog, activityName_key:str=xes.DEFAULT_NA
 
 def _caseToRun(case:Trace, concurrents:Set[Tuple[str,str]], activityName_key:str=xes.DEFAULT_NAME_KEY)->FrozenSet[Tuple[str,str]]:
     """
-        Converts a Case into a Run, i.e. a set of Directly Follows Relations, taking into account the concurrency between activities (described by ```concurrents```)
+        Converts a Case into a Run, i.e. a set of Directly Follows Relations, taking into account the concurrency between activities (described by `concurrents`)
     """
     #Compute the closure of ltdot 
     ltdot_closure = _transitiveClosure_Cases(case)
@@ -61,7 +61,7 @@ def extractRuns(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, prevRun
     """
         Extracts the runs occuring in a Sublog, taking into account the concurrency observed in this time window. 
 
-        Also takes ```prevRuns```, which is the Runs calculated in the last step. If ```prevConcurrents``` is equal to the set of concurrent activities in this Log, then we only have to compute the run that is the newly detected case. All others we can simply use from the previous iteration (Remove the first as it is no longer in the time window)
+        Also takes `prevRuns`, which is the Runs calculated in the last step. If `prevConcurrents` is equal to the set of concurrent activities in this Log, then we only have to compute the run that is the newly detected case. All others we can simply use from the previous iteration (Remove the first as it is no longer in the time window)
     """
     #TODO: Only keep the cases which completed in the time window? We have a stream of traces; Only keep the traces which end before the last one does?
     #Find concurrency
