@@ -9,8 +9,8 @@ import pandas as pd
 from helpers import calcAvgDuration
 import matplotlib.pyplot as plt
 from deprecated import deprecated
-from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum
-import uuid
+from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
+
 # The calculation of the F1 score as described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
 def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn", verbose:bool=False):
     """
@@ -117,6 +117,13 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
         actual_changepoints (List[int]): List of locations of actual changepoints.
         lag_window (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
 
+    Examples:
+        >>> detected_changepoints = [1050, 934, 2100]
+        >>> actual_changepoints = [1000,1149,2000]
+        >>> _assign_changepoints(detected_changepoints, actual_changepoints)
+        >>> [(1050, 1149), (934, 1000), (2100, 2000)]
+        >>> # Notice how the actual changepoint 1000 gets a further detected changepoint to allow 1149 to also get a changepoint assigned
+
     Returns:
         List[Tuple[int,int]]: List of tuples of (detected_changepoint, actual_changepoint) assignments
     """
@@ -163,6 +170,8 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
                 )
         return prob, x
 
+    solver = PULP_CBC_CMD(msg=0)
+
     ### Multi-Objective Optimization: First maximize number of assignments to find out the best True Positive number that can be achieved
     # Find the largest number of change points:
     prob1, prob1_vars = buildProb_NoObjective(LpMaximize)
@@ -174,7 +183,7 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
         ),
         "Maximize number of assignments"
     )
-    prob1.solve()
+    prob1.solve(solver)
     # Calculate number of TP
     num_tp = len([
         (dp, ap)
@@ -203,7 +212,7 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
         ) == num_tp,
         "Maximize Number of Assignments"
     )
-    prob2.solve()
+    prob2.solve(solver)
     return [
         (dp, ap)
         for dp in detected_changepoints for ap in actual_changepoints
