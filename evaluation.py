@@ -165,7 +165,7 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
         for dp in detected_changepoints:
             for ap in actual_changepoints:
                 prob += (
-                    x[dp, ap] * (dp - ap) <= lag_window,
+                    x[dp, ap] * abs(dp - ap) <= lag_window,
                     f"Distance_Within_Lag_Window : {dp}_{ap}"
                 )
         return prob, x
