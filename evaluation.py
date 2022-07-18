@@ -2,7 +2,7 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -105,12 +105,15 @@ def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_divis
         recall = zero_division
     return (precision, recall)
 
-def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:List[int], lag_window:int=200):
-    """Assigns detected changepoints to actual changepoints.
+def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:List[int], lag_window:int=200) -> List[Tuple[int,int]]:
+    """Assigns detected changepoints to actual changepoints using a LP.
         With restrictions: 
             - Detected point must be within lag_window of actual point. 
             - Detected point can only be assigned to one actual point.
             - Every actual point can have at most one detected point assigned. 
+
+        This is done by first optimizing for the number of assignments, finding how many detected change points could be assigned, without minimizing the \
+        total lag. Then, the LP is solved again, minimizing the sum of squared lags, while keeping the number of assignments as high as possible.
 
     Args:
         detected_changepoints (List[int]): List of locations of detected changepoints.
