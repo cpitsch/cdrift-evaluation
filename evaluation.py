@@ -120,7 +120,7 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
     Examples:
         >>> detected_changepoints = [1050, 934, 2100]
         >>> actual_changepoints = [1000,1149,2000]
-        >>> _assign_changepoints(detected_changepoints, actual_changepoints)
+        >>> _assign_changepoints(detected_changepoints, actual_changepoints, lag_window=200)
         >>> [(1050, 1149), (934, 1000), (2100, 2000)]
         >>> # Notice how the actual changepoint 1000 gets a further detected changepoint to allow 1149 to also get a changepoint assigned
 
@@ -226,6 +226,12 @@ def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], 
         detected_changepoints (List[int]): Locations of detected changepoints
         actual_changepoints (List[int]): Locations of actual (known) changepoints
         lag_window (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
+
+    Examples:
+        >>> detected_changepoints = [1050, 934, 2100]
+        >>> actual_changepoints = [1000,1149,2000]
+        >>> get_avg_lag(detected_changepoints, actual_changepoints, lag_window=200)
+        >>> 88.33333333333333
 
     Returns:
         float: the average distance between detected changepoints and the actual changepoint they get assigned to
