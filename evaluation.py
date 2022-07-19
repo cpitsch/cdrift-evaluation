@@ -8,7 +8,6 @@ import pandas as pd
 
 from helpers import calcAvgDuration
 import matplotlib.pyplot as plt
-from deprecated import deprecated
 from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
 
 # The calculation of the F1 score as described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
@@ -332,62 +331,4 @@ def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../sc
     points = calcScatterData(dfs, handle_nan_as)
     plotScatterData(points)
 
-### Deprecated / Never used Evaluation Metrics ###
 
-@deprecated("This function has never been tested. We recommend not to use it")
-def annotationError(detected:List[int], known: List[int]):
-    return abs(len(detected)-len(known))
-
-@deprecated("This function has never been tested. We recommend not to use it")
-def hausdorff(detected:List[int], known: List[int]):
-    return max(
-        (
-            max(
-                min(
-                    abs(t_predict-t_known)
-                    for t_known in known
-                )
-                for t_predict in detected
-            )
-        ),
-        (
-            max(
-                min(
-                    abs(t_predict - t_known)
-                    for t_predict in detected
-                )
-                for t_known in known
-            )
-        )
-    )
-
-@deprecated("This function has never been tested. We recommend not to use it")
-def rand_index(detected:List[int], known: List[int], signal_length:int):
-    def _calc_gr_ngr(changepoints: List[int]):
-        gr = {(s,t) 
-                for s in range(1,signal_length+1) 
-                for t in range(1,signal_length+1)
-                if
-                    s < t and
-                    # s and t belong to the same segment, i.e. there exists no changepoint between them
-                    len([cp for cp in changepoints if s < cp and cp <= t]) == 0
-            }
-            
-        ngr = {(s,t) 
-                for s in range(1,signal_length+1) 
-                for t in range(1,signal_length+1)
-                if
-                    s < t and
-                    # s and t belong to the different segments, i.e. there exists a changepoint between them
-                    #Calculate the number of changepoints between them
-                    len([cp for cp in changepoints if s < cp and cp <= t]) > 0
-            }
-        return gr, ngr
-    gr_detected, ngr_detected = _calc_gr_ngr(detected)
-    gr_known, ngr_known = _calc_gr_ngr(known)
-    randindex = (
-        len(gr_detected.intersection(gr_known))+len(ngr_detected.intersection(ngr_known))
-        ) / (
-            signal_length * (signal_length -1)
-        )
-    return randindex
