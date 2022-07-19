@@ -2,7 +2,7 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union, Any
 import numpy as np
 import pandas as pd
 
@@ -10,49 +10,69 @@ from helpers import calcAvgDuration
 import matplotlib.pyplot as plt
 from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
 
-# The calculation of the F1 score as described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
-def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn", verbose:bool=False):
+
+def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
+    """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.
+
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        detected (List[int]): List of indices of detected change point locations.
+        known (List[int]): The ground truth; List of indices of actual change points.
+
+    Returns:
+        Tuple[int,int]: Tuple of: (true positives, false positives)
     """
-        Calculates the F1 Score for a Changepoint Detection Result
+    assignments = assign_changepoints(detected, known, lag_window=lag)
+    TP = len(assignments) # Every assignment is a True Positive, and every detected point is assigned at most once
+    FP = len(detected) - TP
+    return (TP,FP)
+
+def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_division=np.NaN)->Tuple[Union[float, np.NaN], Union[float,np.NaN]]:
+    """Calculates the precision and recall, using `get_TP_FP` for True positives and False Negatives, which uses assign_changepoints to calculate the assignments of detected change point to actual change point.
+
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        detected (List[int]): A list of indices of detected change point locations.
+        known (List[int]): The ground truth; List of indices of actual change points.
+        zero_division (Any, optional): The value to yield for precision/recall when a zero-division is encountered. Defaults to np.NaN.
+
+    Returns:
+        Tuple[Union[float,np.NaN], Union[float,np.NaN]]: _description_
+    """
+
+    TP, _ = getTP_FP(lag, detected, known)
+    if(len(detected) > 0):
+        precision = TP/len(detected)
+    else:
+        precision = zero_division
+    if(len(known) > 0):
+        recall = TP/len(known)
+    else:
+        recall = zero_division
+    return (precision, recall)
+
+def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn", verbose:bool=False):
+    """ Calculates the F1 Score for a Changepoint Detection Result
 
         - Considering a known changepoint at timepoint t:
             - A True Positive is when a changepoint is detected within [t-`lag`, t+`lag`]
             - A False Negative is when no changepoint is detected in this window around a known changepoint
             - A False Positive is when there is no known changepoint in a window of `lag` around the detected one
+            - Note: Only one detected change point can be a TP for a given known changepoint, and vice versa. The assignment of detected change points to actual change points is done using a Linear Program (see assign_changepoints)
         - From this the F1-Score is calculated as (2&middot;precision&middot;recall) / (precision+recall)
 
-        params:
-            lag:int
-                The window around an actual changepoint in which a detection is considered correct. i.e. if a changepoint occurs at time t, any prediction in [t-l, t+l] is considered a True Positive. It is assumed that the windows around a known change point induced by the lag are non-overlapping
-            detected:List[int]
-                A list of indices where the Changepoint Algorithm detected a Changepoint
-            known:List[int]
-                A list of indices where we know that a Changepoint is located
-            zero_division:any default: 0
-                The return value if the calculation of precision/recall/F1 divides by 0 e.g. 0,1,NaN,.. if set to warn, 0 is returned and a warning is printed out
-        returns:
-            f1:float in [0,1]
-                The F1-Score of this Prediction
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        detected (List[int]) : A list of indices of detected change point locations.
+        known (List[int]): The ground truth; List of indices of actual change points.
+        zero_division (str, optional): The return value if the calculation of precision/recall/F1 divides by 0. If set to "warn", 0 is returned and a warning is printed out. Defaults to "warn".
+        verbose (bool, optional): If verbose, warning messages are printed when a zero-division is encountered. Defaults to False.
+
+    Returns:
+        float: The F1-Score corresponding to the given prediction.
     """
-    TP = 0
-    #FP = 0
 
-    #Find True and False positives 
-    for point in known:
-        window_begin = point-lag
-        window_end = point+lag
-        # window = range(point-lag,point+lag+1)
-        if any([window_begin <= d and d <= window_end for d in detected]):
-            TP += 1 # At least one changepoint was detected close enough to this one
-            #TODO: Caution, it is possible to count 1 detected changepoint for multiple change points, maybe the best would be to calculate the optimal Detected -> Known mapping with an ILP
-    # for point in detected:
-    #     window = [x for x in known if point-lag < x and x < point+lag] # All the known changepoints that are in the window around it
-    #     if len(window) == 0:
-    #         #A changepoint was detected where none was
-    #         FP += 1
-    #     else:
-    #         TP += 1 # Only incrementing by 1 since a detected changepoint can only correspond to maximally 1 actual changepoint
-
+    TP, _ = getTP_FP(lag, detected, known)
 
     if len(detected) == 0 or len(known) == 0: # Divide by zero
         if zero_division == "warn" and verbose:
@@ -72,19 +92,19 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
 # Alias for F1_Score
 f1 = F1_Score
 
+def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negatives:int=None)->Tuple[Union[float, np.NaN], Union[float,np.NaN]]:
+    """Calculates the True-Positive-Rate and the False-Positive-Rate for a given detection. 
 
-def getTP_FP(lag:int, detected:List[int], known:List[int]):
-    TP = 0
-    FP = 0
-    for point in known:
-        window_begin = point-lag
-        window_end = point+lag
-        if any([window_begin <= d and d <= window_end for d in detected]):
-            TP += 1
-    FP = len(detected) - TP
-    return (TP,FP)
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        detected (List[int]): A list of indices of detected change point locations.
+        known (List[int]): The ground truth; List of indices of actual change points.
+        num_possible_negatives (int, optional): The number of possible negatives. In theory, this is `len(log)-len(known)`, however this number is way too large. Defaults to None.
 
-def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negatives:int=None):
+    Returns:
+        Tuple[Union[float, np.NaN], Union[float,np.NaN]]: A tuple of: (True-Positive-Rate, False-Positive-Rate)
+    """
+
     TP, FP = getTP_FP(lag, detected, known)
     P = len(known)
     TPR = TP/P
@@ -92,19 +112,8 @@ def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negat
     FPR = FP/num_possible_negatives if num_possible_negatives is not None else np.NaN
     return (TPR, FPR)
 
-def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_division=np.NaN):
-    TP, FP = getTP_FP(lag, detected, known)
-    if(len(detected) > 0):
-        precision = TP/len(detected)
-    else:
-        precision = zero_division
-    if(len(known) > 0):
-        recall = TP/len(known)
-    else:
-        recall = zero_division
-    return (precision, recall)
 
-def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:List[int], lag_window:int=200) -> List[Tuple[int,int]]:
+def assign_changepoints(detected_changepoints: List[int], actual_changepoints:List[int], lag_window:int=200) -> List[Tuple[int,int]]:
     """Assigns detected changepoints to actual changepoints using a LP.
         With restrictions: 
             - Detected point must be within lag_window of actual point. 
@@ -122,7 +131,7 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
     Examples:
         >>> detected_changepoints = [1050, 934, 2100]
         >>> actual_changepoints = [1000,1149,2000]
-        >>> _assign_changepoints(detected_changepoints, actual_changepoints, lag_window=200)
+        >>> assign_changepoints(detected_changepoints, actual_changepoints, lag_window=200)
         >>> [(1050, 1149), (934, 1000), (2100, 2000)]
         >>> # Notice how the actual changepoint 1000 gets a further detected changepoint to allow 1149 to also get a changepoint assigned
 
@@ -221,8 +230,8 @@ def _assign_changepoints(detected_changepoints: List[int], actual_changepoints:L
         if prob2_vars[dp, ap].varValue == 1
     ]
 
-def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], lag_window:int=200):
-    """Calculates the average lag between detected and actual changepoints (false positives do not affect this metric!)
+def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], lag_window:int=200)->float:
+    """Calculates the average lag between detected and actual changepoints (Caution: false positives do not affect this metric!)
 
     Args:
         detected_changepoints (List[int]): Locations of detected changepoints
@@ -238,7 +247,7 @@ def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], 
     Returns:
         float: the average distance between detected changepoints and the actual changepoint they get assigned to
     """
-    assignments = _assign_changepoints(detected_changepoints, actual_changepoints, lag_window=lag_window)
+    assignments = assign_changepoints(detected_changepoints, actual_changepoints, lag_window=lag_window)
     avg_lag = 0
     for (dc,ap) in assignments:
         avg_lag += abs(dc-ap)
@@ -248,10 +257,18 @@ def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], 
         return np.nan;
 
 
-def getROCData(lag:int, df:pd.DataFrame, undefined_equals=0):
+def getROCData(lag:int, df:pd.DataFrame, undefined_equals=0)->List[Tuple[float,float]]:
+    """Returns a list of points, as tuples of Recall (TPR) and Precision (Cannot do FPR because negatives are not really defined for concept drift detection/negatives are practically the entire log (`len(log)-len(detected)`))
+
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        df (pd.DataFrame): The Dataframe containing the detection results of the approach
+        undefined_equals (int, optional): The value to assign to undefined F1-Scores. Defaults to 0.
+
+    Returns:
+        List[Tuple[float,float]]: A list of the mean precision and recall values for each Window Size found in the dataframe.
     """
-        Returns a list of points, as tuples of Recall (TPR) and Precision (Cannot do FPR because Negatives are not really defined/there are so many)
-    """
+
     groups = df.groupby("Window Size")
     points = []
     for win, win_df in groups:
@@ -265,8 +282,14 @@ def getROCData(lag:int, df:pd.DataFrame, undefined_equals=0):
         points.append(  (np.mean(recalls), np.mean(precisions))   )
     return points
 
-def plotROC(lag, df:pd.DataFrame, undefined_equals=0):
-    import matplotlib.pyplot as plt
+def plotROC(lag, df:pd.DataFrame, undefined_equals=0)->None:
+    """Plot an ROC Curve (using precision and recall) for the given dataframe and a given lag value for precision and recall evaluation
+
+    Args:
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
+        df (pd.DataFrame): The Dataframe containing the detection results of the approach
+        undefined_equals (int, optional): The value to assign to undefined F1-Scores. Defaults to 0.
+    """    
     dat = getROCData(lag,df,undefined_equals)
     recalls, precisions = list(zip(*dat))
     print(precisions)
@@ -278,15 +301,15 @@ def plotROC(lag, df:pd.DataFrame, undefined_equals=0):
     plt.ylabel("Recall")
     plt.show()
 
-def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan):
+def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan)->List[Dict]:
     """Calculates the points for a scatterplot, plotting Calculation Time against the achieved F1-Score
 
     Args:
-        dfs (List[pd.DataFrame]): The dataframe of each approach to be plotted
-        handle_nan_as (_type_, optional): How should an undefined F1-Score (Division by zero) be handled? Defaults to np.nan.
+        dfs (List[pd.DataFrame]): A list of dataframes (each one corresponding to an approach) to calculate the scatterplot data for.
+        handle_nan_as (Any, optional): How should an undefined F1-Score (Division by zero) be handled? Defaults to np.nan.
 
     Returns:
-        List[Dict[]]: A list of points, represented as dictionaries with keys "duration", "f1", and "name"
+        List[Dict]: A list of points, represented as dictionaries with keys "duration", "f1", and "name"
     """
     points:List[Dict] = []
     for df in dfs:
@@ -300,7 +323,7 @@ def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan):
     return points
 
 
-def plotScatterData(points: List[Dict], path="../scatter_fig.png", _format="png"):
+def plotScatterData(points: List[Dict], path="../scatter_fig.png", _format="png")->None:
     """Plots a list of points (dictionaries in a scatterplot and saves it)
 
     Args:
@@ -319,7 +342,7 @@ def plotScatterData(points: List[Dict], path="../scatter_fig.png", _format="png"
     plt.savefig(path, bbox_inches='tight', format=_format)
     plt.show()     
 
-def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../scatter_fig.png", _format="png"):
+def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../scatter_fig.png", _format="png")->None:
     """Plots a scatterplot of the F1-Score against the duration of the algorithm, given a list of dataframes for each approach
 
     Args:
@@ -329,6 +352,6 @@ def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../sc
         _format (str, optional): Format of the Figure. Defaults to "png".
     """
     points = calcScatterData(dfs, handle_nan_as)
-    plotScatterData(points)
+    plotScatterData(points, path=path, _format=_format)
 
 
