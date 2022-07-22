@@ -196,7 +196,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_j,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_j, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr_J
     }, ignore_index=True)
 
@@ -206,7 +206,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_wc,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_wc, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -288,7 +288,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_j_cp,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_j_cp, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr_J
     }, ignore_index=True)
     resDF = resDF.append({
@@ -297,7 +297,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_wc_cp,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=rb_wc_cp, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -335,7 +335,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG,detected=cp_em, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -369,7 +369,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_runs,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp_runs, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -395,7 +395,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
         'Max Adaptive Window': ADAP_MAX_WIN,
         'Detected Changepoints': cp,
         'Actual Changepoints for Log': cp_locations,
-        'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=cp_locations, zero_division=np.NaN),
+        'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -425,7 +425,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, pos
             'Epsilon': eps,
             'Detected Changepoints': cp,
             'Actual Changepoints for Log': cp_locations,
-            'F1-Score': evaluation.F1_Score(F1_LAG, detected=cp, known=cp_locations, zero_division=np.NaN),
+            'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Duration': durStr
         }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)

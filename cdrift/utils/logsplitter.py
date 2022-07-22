@@ -10,7 +10,7 @@ import datetime
 
 import math
 
-from cdrift.helpers import _dateToDatetime, makeProgressBar
+from cdrift.utils.helpers import _dateToDatetime, makeProgressBar
 
 import pkgutil
 

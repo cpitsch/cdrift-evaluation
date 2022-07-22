@@ -8,7 +8,8 @@ import math
 import scipy.stats.contingency as contingency
 from scipy.stats import power_divergence
 
-from cdrift.helpers import _getActivityNames, makeProgressBar
+from cdrift.utils.helpers import _getActivityNames, makeProgressBar
+
 def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=0.0001, activityName_key: str = xes.DEFAULT_NAME_KEY, progressBarPosition:int=None):
     activities = sorted(_getActivityNames(log, activityName_key=activityName_key))
     i = 0

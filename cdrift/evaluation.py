@@ -12,13 +12,13 @@ from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum,
 
 from cdrift.utils.helpers import calcAvgDuration
 
-def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
+def getTP_FP(detected:List[int], known:List[int], lag:int)-> Tuple[int,int]:
     """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
-        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         detected (List[int]): List of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
 
     Returns:
         Tuple[int,int]: Tuple of: (true positives, false positives)
@@ -28,20 +28,20 @@ def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
     FP = len(detected) - TP
     return (TP,FP)
 
-def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_division=np.NaN)->Tuple[float, float]:
+def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_division=np.NaN)->Tuple[float, float]:
     """Calculates the precision and recall, using `get_TP_FP` for True positives and False Negatives, which uses assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
-        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         detected (List[int]): A list of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         zero_division (Any, optional): The value to yield for precision/recall when a zero-division is encountered. Defaults to np.NaN.
 
     Returns:
         Tuple[Union[float,np.NaN], Union[float,np.NaN]]: _description_
     """
 
-    TP, _ = getTP_FP(lag, detected, known)
+    TP, _ = getTP_FP(detected, known, lag)
     if(len(detected) > 0):
         precision = TP/len(detected)
     else:
@@ -52,7 +52,7 @@ def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_divis
         recall = zero_division
     return (precision, recall)
 
-def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn", verbose:bool=False):
+def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn", verbose:bool=False):
     """ Calculates the F1 Score for a Changepoint Detection Result
 
         - Considering a known changepoint at timepoint t:
@@ -63,9 +63,9 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
         - From this the F1-Score is calculated as (2&middot;precision&middot;recall) / (precision+recall)
 
     Args:
-        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         detected (List[int]) : A list of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         zero_division (str, optional): The return value if the calculation of precision/recall/F1 divides by 0. If set to "warn", 0 is returned and a warning is printed out. Defaults to "warn".
         verbose (bool, optional): If verbose, warning messages are printed when a zero-division is encountered. Defaults to False.
 
@@ -73,7 +73,7 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
         float: The F1-Score corresponding to the given prediction.
     """
 
-    TP, _ = getTP_FP(lag, detected, known)
+    TP, _ = getTP_FP(detected, known, lag)
 
     if len(detected) == 0 or len(known) == 0: # Divide by zero
         if zero_division == "warn" and verbose:
@@ -93,20 +93,20 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
 # Alias for F1_Score
 f1 = F1_Score
 
-def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negatives:int=None)->Tuple[float, float]:
+def calcTPR_FPR(detected:List[int], known:List[int], lag:int, num_possible_negatives:int=None)->Tuple[float, float]:
     """Calculates the True-Positive-Rate and the False-Positive-Rate for a given detection. 
 
     Args:
-        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         detected (List[int]): A list of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
+        lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         num_possible_negatives (int, optional): The number of possible negatives. In theory, this is `len(log)-len(known)`, however this number is way too large. Defaults to None.
 
     Returns:
         Tuple[Union[float, np.NaN], Union[float,np.NaN]]: A tuple of: (True-Positive-Rate, False-Positive-Rate)
     """
 
-    TP, FP = getTP_FP(lag, detected, known)
+    TP, FP = getTP_FP(detected, known, lag)
     P = len(known)
     TPR = TP/P
     # So many Negative points it wouldnt make sense....

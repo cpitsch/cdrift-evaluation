@@ -1,2 +1,1 @@
-import logsplitter
-import helpers
+from cdrift.utils import logsplitter, helpers

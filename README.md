@@ -109,10 +109,10 @@ changepoints = zheng.apply(log,mrid, epsilon)
 - Evaluation is done performed using `evaluation.py`:
 ```python
 from cdrift import evaluation
-f1 = evaluation.F1_Score(lag_window, detected_cps, known_cps)# Calculate F1-Score
+f1 = evaluation.F1_Score(detected_cps, known_cps, lag_window)# Calculate F1-Score
 # Or:
-tp, fp = evaluation.calcTP_FP(lag_window, detected_cps,known_cps) # Calculate True/False Positives
+tp, fp = evaluation.getTP_FP(detected_cps, known_cps, lag_window) # Calculate True/False Positives
 # Or:
 from numpy import NaN
-precision, recall = evaluation.calcPrecision_Recall(lag_window, detected_cps,known_cps, zero_division=NaN) # Calculate Precision/Recall
+precision, recall = evaluation.calcPrecision_Recall(detected_cps, known_cps, lag_window, zero_division=NaN) # Calculate Precision/Recall
 ```
