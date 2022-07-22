@@ -103,8 +103,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
                 Boolean whether y axis should autoscale by matplotlib (True) or be limited (0,max(pvals)+0.1) (False)
     """
     # Plotting Configuration
-    plt.rcParams['figure.figsize']=(10,4)
-
+    fig = plt.figure(figsize=(10,4))
     plt.plot(pvals)
     # Not hardcoded 0-1 because of earthmovers distance (and +.1 so 1 is also drawn)
     if not autoScale:
