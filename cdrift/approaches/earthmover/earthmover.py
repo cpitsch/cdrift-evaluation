@@ -5,7 +5,9 @@ import pm4py.util.xes_constants as xes
 import numpy 
 from wasserstein import EMD
 from collections import Counter
-from helpers import makeProgressBar
+
+from cdrift.helpers import makeProgressBar
+
 from sklearn.cluster import kmeans_plusplus
 
 from strsimpy.levenshtein import Levenshtein

@@ -1,6 +1,7 @@
 import sys
 import argparse
 
+# Do parsing as soon as possible to avoid large imports just to, e.g., show help menu
 parser = argparse.ArgumentParser(description="Sudden Control Flow Concept Drift Detection Algorithm Evaluation")
 parser.add_argument("-s", "--save-cores", type=int, required=False, help="How many cores NOT to use. The higher, the less cores are used; Default: 2", default=2)
 parser.add_argument("-O", "--overwrite", required=False, help="If present and the output file already exists, it is overwritten. If not present, the execution is cancelled if the file already exists", action="store_true")
@@ -22,28 +23,20 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-#Earthmover
-import earthmover
+
+from cdrift.approaches import earthmover, bose, martjushev
 
 #Maaradji
-import maaradji as runs
+from cdrift.approaches import maaradji as runs
 
 # Zheng
-from zheng import applyMultipleEps
-
-#Bose
-import bose
-import scipy.stats as stats
-import martjushev
+from cdrift.approaches.zheng import applyMultipleEps
 
 #Process Graph CPD
-import processGraphMetrics as pm
+from cdrift.approaches import process_graph_metrics as pm
 
-# Helper Functions
-import helpers
-
-#Evaluation functions
-import evaluation
+# Helper functions and evaluation functions
+from cdrift import helpers, evaluation
 
 #Misc
 import os

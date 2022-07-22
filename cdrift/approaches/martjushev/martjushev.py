@@ -1,11 +1,12 @@
-from bose import extractJMeasure, extractWindowCount
+from cdrift.approaches.bose import extractJMeasure, extractWindowCount
+from cdrift.helpers import _getActivityNames, makeProgressBar
+
 import numpy as np
 from typing import Callable, List
 from numbers import Number
 import scipy.stats as stats
 from pm4py.objects.log.obj import EventLog
 from pm4py.util import xes_constants as xes
-from helpers import _getActivityNames, makeProgressBar
 # The Recursive Bisection Algorithm for locating the point of change within two populaations as Described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
 def _locateChange(pop1:np.ndarray, pop2:np.ndarray, baseindex:int, test: Callable, pvalue:float=0.05, **kwargs):
     """

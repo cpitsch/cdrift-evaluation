@@ -13,7 +13,7 @@ import pm4py.util.xes_constants as xes
 from tqdm.auto import tqdm
 
 # Own functions
-from helpers import _getActivityNames, _getActivityNames_LogList, makeProgressBar
+from cdrift.helpers import _getActivityNames, _getActivityNames_LogList, makeProgressBar
 
 
 def _getCausalFootprint(log:EventLog, activities=None, activityName_key:str=xes.DEFAULT_NAME_KEY)->np.chararray:

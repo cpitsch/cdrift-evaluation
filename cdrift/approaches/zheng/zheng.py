@@ -1,12 +1,11 @@
 from pm4py.objects.log.obj import EventLog
 from typing import Dict, List, Set
 import pm4py.util.xes_constants as xes
-from helpers import _getActivityNames
 from sklearn.cluster import DBSCAN
 import numpy as np
 from numpy.typing import NDArray
 
-from helpers import makeProgressBar
+from cdrift.helpers import makeProgressBar, _getActivityNames
 
 def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, progress=None):
     activities = _getActivityNames(log, activityName_key=activityName_key)
@@ -180,6 +179,8 @@ def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_k
 
 
 def _resetPBar_PreserveTime(progress, newTotal=None):
+    """Reset the given progress bar without resetting the time elapsed."""
+
     if newTotal is not None:
         progress.total = newTotal
     progress.n = 0

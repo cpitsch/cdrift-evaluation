@@ -3,13 +3,14 @@
 ###############################################
 
 from typing import Dict, List, Tuple, Union, Any
+
 import numpy as np
 import pandas as pd
 
-from helpers import calcAvgDuration
 import matplotlib.pyplot as plt
 from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
 
+from cdrift.helpers import calcAvgDuration
 
 def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
     """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.
@@ -27,7 +28,7 @@ def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
     FP = len(detected) - TP
     return (TP,FP)
 
-def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_division=np.NaN)->Tuple[Union[float, np.NaN], Union[float,np.NaN]]:
+def calcPrecisionRecall(lag:int, detected:List[int], known:List[int], zero_division=np.NaN)->Tuple[float, float]:
     """Calculates the precision and recall, using `get_TP_FP` for True positives and False Negatives, which uses assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
@@ -92,7 +93,7 @@ def F1_Score(lag:int, detected:List[int], known: List[int], zero_division="warn"
 # Alias for F1_Score
 f1 = F1_Score
 
-def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negatives:int=None)->Tuple[Union[float, np.NaN], Union[float,np.NaN]]:
+def calcTPR_FPR(lag:int, detected:List[int], known:List[int], num_possible_negatives:int=None)->Tuple[float, float]:
     """Calculates the True-Positive-Rate and the False-Positive-Rate for a given detection. 
 
     Args:

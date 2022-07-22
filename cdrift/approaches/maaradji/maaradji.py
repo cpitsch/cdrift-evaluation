@@ -10,10 +10,10 @@ from typing import FrozenSet, List, Tuple, Counter, Set, Union, Optional
 from numpy.typing import NDArray
 from pm4py.objects.log.obj import EventLog, Trace, Event
 import pm4py.util.xes_constants as xes
-from helpers import transitiveReduction, makeProgressBar
 import numpy
 import scipy.stats as stats
 
+from cdrift.helpers import transitiveReduction, makeProgressBar
 
 
 def extractTraces(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[Tuple[str, ...]]:

@@ -4,13 +4,11 @@ Helper functions for various random libraries, that have no immediate relation w
 
 import ast
 import datetime
-import pkgutil
 from typing import List
 import numpy
 
 import networkx as nx
 
-import pm4py
 from pm4py.util import xes_constants as xes
 from pm4py.objects.log.importer.xes import importer as xes_importer
 from pm4py.objects.log.obj import EventLog
