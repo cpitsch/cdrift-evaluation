@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
 
-from cdrift.helpers import calcAvgDuration
+from cdrift.utils.helpers import calcAvgDuration
 
 def getTP_FP(lag:int, detected:List[int], known:List[int])-> Tuple[int,int]:
     """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.

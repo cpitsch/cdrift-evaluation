@@ -5,7 +5,7 @@ from sklearn.cluster import DBSCAN
 import numpy as np
 from numpy.typing import NDArray
 
-from cdrift.helpers import makeProgressBar, _getActivityNames
+from cdrift.utils.helpers import makeProgressBar, _getActivityNames
 
 def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, progress=None):
     activities = _getActivityNames(log, activityName_key=activityName_key)

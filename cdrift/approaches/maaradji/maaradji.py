@@ -13,7 +13,7 @@ import pm4py.util.xes_constants as xes
 import numpy
 import scipy.stats as stats
 
-from cdrift.helpers import transitiveReduction, makeProgressBar
+from cdrift.utils.helpers import transitiveReduction, makeProgressBar
 
 
 def extractTraces(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[Tuple[str, ...]]:

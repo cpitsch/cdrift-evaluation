@@ -6,7 +6,7 @@ import numpy
 from wasserstein import EMD
 from collections import Counter
 
-from cdrift.helpers import makeProgressBar
+from cdrift.utils.helpers import makeProgressBar
 
 from sklearn.cluster import kmeans_plusplus
 

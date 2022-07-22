@@ -36,7 +36,8 @@ from cdrift.approaches.zheng import applyMultipleEps
 from cdrift.approaches import process_graph_metrics as pm
 
 # Helper functions and evaluation functions
-from cdrift import helpers, evaluation
+from cdrift import evaluation
+from cdrift.utils import helpers
 
 #Misc
 import os
