@@ -293,8 +293,6 @@ def plotROC(lag, df:pd.DataFrame, undefined_equals=0)->None:
     """    
     dat = getROCData(lag,df,undefined_equals)
     recalls, precisions = list(zip(*dat))
-    print(precisions)
-    print(recalls)
     plt.plot(precisions, recalls) # x is precisions, y is recalls
     plt.ylim(-0.01,1.01)
     plt.xlim(-0.01,1.01)
