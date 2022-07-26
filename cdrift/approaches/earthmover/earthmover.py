@@ -76,7 +76,13 @@ def lev(trace1:Iterable, trace2:Iterable)-> float:
     return lever.distance(trace1, trace2)
 
 def postNormalizedWeightedLevenshteinDistance(trace1, trace2, rename_cost, insertion_deletion_cost, cost_time_match_rename, cost_time_insert_delete)-> float:
-    return weightedLevenshteinDistance(trace1,trace2)/max(len(trace1),len(trace2))
+    return weightedLevenshteinDistance( trace1,
+                                        trace2,
+                                        rename_cost=rename_cost,
+                                        insertion_deletion_cost=insertion_deletion_cost,
+                                        cost_time_match_rename=cost_time_match_rename,
+                                        cost_time_insert_delete=cost_time_insert_delete
+                                    ) / max(len(trace1),len(trace2))
 
 def weightedLevenshteinDistance(trace1, trace2, rename_cost, insertion_deletion_cost, cost_time_match_rename, cost_time_insert_delete, previous_distances=None, return_distances=False):
     if trace1 == trace2:
