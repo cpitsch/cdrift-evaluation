@@ -7,6 +7,7 @@ from collections import Counter
 import math
 import typing
 from typing import FrozenSet, List, Tuple, Counter, Set, Union, Optional
+from deprecated import deprecated
 from numpy.typing import NDArray
 from pm4py.objects.log.obj import EventLog, Trace, Event
 import pm4py.util.xes_constants as xes
@@ -17,24 +18,44 @@ from cdrift.utils.helpers import transitiveReduction, makeProgressBar
 
 
 def extractTraces(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[Tuple[str, ...]]:
+    """Extract traces from the event log, i.e., a view on the event log concerned only with the executed activtiy
+
+    Args:
+        log (EventLog): The event log to use
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        List[Tuple[str, ...]]: A list of traces, in form of a tuple of executed activity names. Same order as originally in the event log.
     """
-        Returns the Traces Occuring in a log (Still ordered by time). So abstracts down from events to activity names
-    """
+
     return [
         tuple(evt[activityName_key] for evt in case)
         for case in log
     ]
 
 
-def _extractDirectlyFollowsCase(case:Trace, activityName_key:str=xes.DEFAULT_NAME_KEY)->typing.Counter[Tuple[str,str]]:
+def _extractDirectlyFollowsCase(case:Trace, activityName_key:str=xes.DEFAULT_NAME_KEY)->Counter[Tuple[str,str]]:
+    """For a case, extract the directly-follows relations occurring in it.
+
+    Args:
+        case (Trace): The case
+        activityName_key (str, optional): The key for the activity value in the case. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        Counter[Tuple[str,str]]: A Counter Object (Multiset) of directly-follows relations represented as a Tuple.
     """
-        Returns a Set of Directly-Follows Relations between Actvity Names (as tuple), for a case
-    """
+
     return Counter([(case[i][activityName_key],case[i+1][activityName_key]) for i in range(len(case)-1)])
 
 def _extractDirectlyFollowsLog(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->Set[Tuple[str,str]]:
-    """
-        Returns a Set of Directly-Follows Relations between Actvity Names (as tuple), for an entire Event Log.
+    """Calculate the set of directly-follows relations occurring in the event log
+
+    Args:
+        log (EventLog): The event log
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        Set[Tuple[str,str]]: The set of directly-follows relations found in the event log. Each represented as a tuple of activity names.
     """
     df = set()
     for case in log:
@@ -42,9 +63,17 @@ def _extractDirectlyFollowsLog(log:EventLog, activityName_key:str=xes.DEFAULT_NA
     return df
 
 def _caseToRun(case:Trace, concurrents:Set[Tuple[str,str]], activityName_key:str=xes.DEFAULT_NAME_KEY)->FrozenSet[Tuple[str,str]]:
+    """A helper function to convert a case into a run, as defined by Maaradji et al. in Fast And Accurate Business Process Drift Detection.
+
+    Args:
+        case (Trace): The case
+        concurrents (Set[Tuple[str,str]]): A set of pairs of concurrent activities. These relations are effectively removed from the case, turning it into a partial order.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        FrozenSet[Tuple[str,str]]: A set of directly-follows relations, representing the computed partial order
     """
-        Converts a Case into a Run, i.e. a set of Directly Follows Relations, taking into account the concurrency between activities (described by `concurrents`)
-    """
+
     #Compute the closure of ltdot 
     ltdot_closure = _transitiveClosure_Cases(case)
     # Remove the events with concurrent activities
@@ -58,12 +87,22 @@ def _caseToRun(case:Trace, concurrents:Set[Tuple[str,str]], activityName_key:str
     return frozenset(causality_pi)
 
 def extractRuns(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, prevRuns:Optional[List[frozenset]]=None, prevConcurrents:Optional[Set[Tuple[str,str]]]=None, returnConcurrents:bool=False)->Union[List[FrozenSet[Tuple[str,str]]], Tuple[FrozenSet[Tuple[str,str]], Set[Tuple[str,str]]]]:
-    """
-        Extracts the runs occuring in a Sublog, taking into account the concurrency observed in this time window. 
+    """Extract the runs occurring in a (sub-) log, using the conceurrency observed in this time window
 
-        Also takes `prevRuns`, which is the Runs calculated in the last step. If `prevConcurrents` is equal to the set of concurrent activities in this Log, then we only have to compute the run that is the newly detected case. All others we can simply use from the previous iteration (Remove the first as it is no longer in the time window)
-    """
-    #TODO: Only keep the cases which completed in the time window? We have a stream of traces; Only keep the traces which end before the last one does?
+    Args:
+        log (EventLog): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        prevRuns (Optional[List[frozenset]], optional): The sequence of runs observed in the previous iteration. Used to potentially decrease computation time. Defaults to None.
+        prevConcurrents (Optional[Set[Tuple[str,str]]], optional): The concurrent activities observed in the previous iteration. Used to potentially decrease computation time. Defaults to None.
+        returnConcurrents (bool, optional): Whether or not the concurrent activities found in this iteration should be returned. Useful for internal use, persisting these values between executions of the function. Defaults to False.
+
+    Returns:
+        Union[List[FrozenSet[Tuple[str,str]]], Tuple[FrozenSet[Tuple[str,str]], Set[Tuple[str,str]]]]: An array of runs, and, if selected, also a set of observed concurrent activities.
+    """    
+    # Takes `prevRuns`, which is the Runs calculated in the last step. 
+    # If `prevConcurrents` is equal to the set of concurrent activities in this Log, then we only have to compute the run that is the newly detected case. 
+    # All others we can simply use from the previous iteration (Remove the first as it is no longer in the time window)
+
     #Find concurrency
     dfs = _extractDirectlyFollowsLog(log, activityName_key=activityName_key)
     #Check alpha concurrency
@@ -83,6 +122,20 @@ def extractRuns(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, prevRun
 
 
 def detectChangepoints_VerySlow(log:EventLog, windowSize:int, pvalue:float=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection.
+
+    Args:
+        log (EventLog): The event log.
+        windowSize (int): The window size for the sliding window algorithm.
+        pvalue (float, optional): P-Value threshold for a pvalue to signify a change point. Defaults to 0.05.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        return_pvalues (bool, optional): Configures whether the computed p-values should be returned as well. Defaults to False.
+        progressBar_pos (Optional[int], optional): The `pos` argument of tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], NDArray]]: A list of the detected change point indices. If selected, also a numpy array of the calculated p-values
+    """    
+
     chis = numpy.ones(len(log))
 
     progress = makeProgressBar(len(log)-(2*windowSize), "applying runs cpd pipeline, windows completed ", position=progressBar_pos)
@@ -144,9 +197,15 @@ def detectChangepoints_VerySlow(log:EventLog, windowSize:int, pvalue:float=0.05,
     return changepoints if not return_pvalues else (changepoints, chis)
 
 def _transitiveClosure_Cases(case:Trace)->Set[Tuple[Event, Event]]:
+    """A helper function to compute the transitive closure for traces. As this is a special case of transitive closure (transitive closure of a "linear" order), we can make use of this to compute it more efficiently.
+
+    Args:
+        case (Trace): The case.
+
+    Returns:
+        Set[Tuple[Event, Event]]: A set of the computed relations of the transitive closure of the directly-follows relations of the case.
     """
-        This is a specific, more efficient, implementation of the transitive closure, which is only correct on the Directly Follows Relations of a Case. Since here we can exploit that the relations induce a "line", so no branching, cycles or different graph components. For a case of length ```n```, runtime of ```O(n)```.
-    """
+
     relations = set()
     seen: List[Trace] = []
     for i in range(1,len(case)+1):
@@ -157,7 +216,22 @@ def _transitiveClosure_Cases(case:Trace)->Set[Tuple[Event, Event]]:
     return relations
 
 #TODO: Check and rewrite Adaptive Runs
+
+@deprecated("This function is deprecated and has not been tested in a very long time. Use with caution.")
 def detectChangepointsAdaptive(log:EventLog, windowSize:int, pvalue:float=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False)->Union[List[int], Tuple[List[int], NDArray]]:
+    """An implementation of the ProDrift Algorithm using adaptive windows.
+
+    Args:
+        log (EventLog): The event log.
+        windowSize (int): The window size for the sliding window algorithm.
+        pvalue (float, optional): The pvalue threshold to consider a pvalue as a change point. Defaults to 0.05.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        return_pvalues (bool, optional): Configures whether the computed p-values should be returned as well. Defaults to False.
+
+    Returns:
+        Union[List[int], Tuple[List[int], NDArray]]: A list of the detected change point indices. If selected, also a numpy array of the calculated pvalues.
+    """    
+
     #traces = extractTraces(log, activityName_key)
     chis = numpy.ones(len(log))
     #progress = makeProgressBar(len(log)-windowSize, "applying runs cpd pipeline, windows completed ::" )
@@ -228,6 +302,20 @@ def detectChangepointsAdaptive(log:EventLog, windowSize:int, pvalue:float=0.05, 
 
 
 def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection.
+
+    Args:
+        log (EventLog): The event log.
+        windowSize (int): The window size for the sliding window algorithm.
+        pvalue (float, optional): P-Value threshold for a pvalue to signify a change point. Defaults to 0.05. Defaults to 0.05.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        return_pvalues (bool, optional): Configures whether the computed p-values should be returned as well. Defaults to False.
+        progressBar_pos (Optional[int], optional): The `pos` argument of tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], NDArray]]: A list of the detected change point indices. If selected, also a numpy array of the calculated p-values
+    """  
+    
     chis = numpy.ones(len(log))
     alphas = set([
         (case[i][activityName_key], case[i+1][activityName_key]) for case in log for i in range(len(case)-1)
