@@ -39,16 +39,16 @@ def _getTimeDifference(time1:datetime.datetime, time2:datetime.datetime, scale:s
         duration = (duration / 3600) / 24
     return duration
     
-def _getKIndicesToMinimize(targetList:numpy.ndarray, k:int, indices:List[int]=None):
-    if indices is None:
-        indices = [index for index in range(len(targetList))]
-    # Get list of tuples index/value for all indices we regard
-    ls = [(ind, val) for (ind,val) in enumerate(targetList) if ind in indices]
-    #Sort ls by the second value, ascending
-    ls.sort(key=lambda y: y[1])
-    output = [ind for (ind,val) in ls[:k]]
-    output.sort()
-    return output
+# def _getKIndicesToMinimize(targetList:numpy.ndarray, k:int, indices:List[int]=None):
+#     if indices is None:
+#         indices = [index for index in range(len(targetList))]
+#     # Get list of tuples index/value for all indices we regard
+#     ls = [(ind, val) for (ind,val) in enumerate(targetList) if ind in indices]
+#     #Sort ls by the second value, ascending
+#     ls.sort(key=lambda y: y[1])
+#     output = [ind for (ind,val) in ls[:k]]
+#     output.sort()
+#     return output
 
 
 
