@@ -15,21 +15,20 @@ from cdrift.utils.helpers import _dateToDatetime, makeProgressBar
 import pkgutil
 
 def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+    """Divide the given log into sublogs where their cases are trimmed to contain only the events that occur in the corresponding Time Window
+
+    Args:
+        log (EventLog): The event log.
+        isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
+        interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
+        timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
+        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+
+    Returns:
+        List[EventLog]: List containing all the sublogs induced by the interval. Every Sublog contains only events that occur in this Time Window (events belonging to the same case, but different Time Window are filtered out)
     """
-    Divides the given log into sublogs where their cases are trimmed to contain only the events that occur in the corresponding Time Window
-        args:
-            log: pm4py.objects.log.obj.EventLog
-                The log which shall be split up into sublogs
-            interval: datetime.timedelta
-                Time Interval indicating how long one Window should be
-            timeAttribute: str
-                Which Attribute indicates time (Usually given by XES standard)
-            truncateStartDate: bool
-                True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log)
-        returns:
-        list[pm4py.objects.log.obj.EventLog]
-        List containing all the sublogs induced by the interval. Every Sublog contains only events that occur in this Time Window (events belonging to the same case, but different Time Window are filtered out)
-    """
+
     if(not isSorted):
         log = sort.sort_timestamp_log(log, timestamp_key=timestamp_key)
 
@@ -53,21 +52,20 @@ def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelt
     return res
 
 def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+    """Divide an event log into sublogs which contain those cases which intersect with the respective time interval. For this reason, cases can be represented in multiple sublogs.
+
+    Args:
+        log (EventLog): The event log.
+        isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
+        interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
+        timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
+        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+
+    Returns:
+        List[EventLog]:  List containing all the sublogs induced by the interval. Every Sublog contains those cases which intersect with the corresponding Time Window
     """
-    Divides the given log into sublogs which contain the Cases which intersect the respectuve time interval of the sublog
-        args:
-            log: pm4py.objects.log.obj.EventLog
-                The log which shall be split up into sublogs
-            interval: datetime.timedelta
-                Time Interval indicating how long one Window should be (Default 1 day)
-            timestamp_key: str
-                Which Attribute indicates time (Usually given by XES standard)
-            truncateStartDate: bool
-                True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log)
-        returns:
-        list[pm4py.objects.log.obj.EventLog]
-        List containing all the sublogs induced by the interval. Every Sublog contains those cases which intersect with the corresponding Time Window
-    """
+
     if(not isSorted):
         log = sort.sort_timestamp_log(log, timestamp_key=timestamp_key)
 
@@ -91,30 +89,20 @@ def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.tim
             progress.update()
     return res
 
-# def divideLogTraces(log:EventLog, isSorted:bool=False, timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY)->List[EventLog]:
-#     if not isSorted:
-#         sort.sort_timestamp(log, timestamp_key=timestamp_key)
-#     return list(pm4py.convert_to_event_stream(log))
 
 def divideLogCaseGroups(log: EventLog, groupSize:int, isSorted:bool=False, timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY, show_progress_bar:bool=True)->List[EventLog]:
+    """Split the event log into sublogs of equal size w.r.t. number of cases.
+
+    Args:
+        log (EventLog): The event log
+        groupSize (int): The number of cases in each sublog.
+        isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
+        timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+    Returns:
+        List[EventLog]: A list of the computed sublogs.
     """
-        Splits the Event Log into Sublogs of equal Size (w.r.t the Number of cases contained within)
-        
-        args:
-            log:pm4py.objects.log.obj.EventLog
-                The Log which shall be split up
-            groupSize:int
-                The number of cases in each Sublog
-            isSorted:bool
-                Describes whether the Log still has to be sorted or not
-            timestamp_key:str
-                The name of the attribute which describes the Timestamp of an event (Used for sorting the EventLog)
-            show_progress_bar:bool
-                Whether or not a progress bar shall be shown
-        returns:
-            logs:list[pm4py.objects.log.obj.EventLog]
-                A list containing all the Sublogs
-    """
+
     if not isSorted:
         log = sort.sort_timestamp(log, timestamp_key=timestamp_key)
 
@@ -139,21 +127,20 @@ def divideLogCaseGroups(log: EventLog, groupSize:int, isSorted:bool=False, times
     return logs
 
 def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+    """Divide the event log into sublogs where a case is associated to the time window in which its first event began
+
+    Args:
+        log (EventLog): The event log.
+        isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
+        interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
+        timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
+        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+
+    Returns:
+        List[EventLog]: List containing all the sublogs induced by the interval.
     """
-    Divides the given log into sublogs where a case is associated to the time window in which its first event began
-        args:
-            log: pm4py.objects.log.obj.EventLog
-                The log which shall be split up into sublogs
-            interval: datetime.timedelta
-                Time Interval indicating how long one Window should be
-            timeAttribute: str
-                Which Attribute indicates time (Usually given by XES standard)
-            truncateStartDate: bool
-                True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log)
-        returns:
-        list[pm4py.objects.log.obj.EventLog]
-        List containing all the sublogs induced by the interval. Every Sublog contains only events that occur in this Time Window (events belonging to the same case, but different Time Window are filtered out)
-    """
+
     #Sort the Event Log if needed
     if(not isSorted):
         log = sort.sort_timestamp_log(log, timestamp_key=timestamp_key)
