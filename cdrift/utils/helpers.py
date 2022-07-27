@@ -4,7 +4,7 @@ Helper functions for various random libraries, that have no immediate relation w
 
 import ast
 import datetime
-from typing import List
+from typing import Any, List, Set, Tuple
 import numpy
 
 import networkx as nx
@@ -19,17 +19,29 @@ import pandas as pd
 from datetime import timedelta
 
 def _dateToDatetime(date:datetime.date)->datetime.datetime:
+    """A helper function to convert a dateime.date object to a datetime.datetime object.
+
+    Args:
+        date (datetime.date): The date to convert.
+
+    Returns:
+        datetime.datetime: The converted datetime object. Hours, Minutes, Seconds, etc. all 0
     """
-    args:
-        date: datetime.date
-            the date which shall be converted to a datetime object
-    returns:
-        datetime.datetime
-            the same date, but as a datetime (hours and minutes all 0)
-    """
+
     return datetime.datetime(date.year, date.month, date.day)
 
 def _getTimeDifference(time1:datetime.datetime, time2:datetime.datetime, scale:str)->float:
+    """A helper function to compute the time difference between two datetime objects.
+
+    Args:
+        time1 (datetime.datetime): The first time.
+        time2 (datetime.datetime): The second time.
+        scale (str): The scale in which to compute the time different. Options: 'minutes', 'hours', or 'days'
+
+    Returns:
+        float: The time difference in the chosen scale.
+    """    
+
     duration = (time2-time1).total_seconds()
     if scale == "minutes":
         duration = duration / 60
@@ -38,132 +50,136 @@ def _getTimeDifference(time1:datetime.datetime, time2:datetime.datetime, scale:s
     elif scale == "days":
         duration = (duration / 3600) / 24
     return duration
-    
-# def _getKIndicesToMinimize(targetList:numpy.ndarray, k:int, indices:List[int]=None):
-#     if indices is None:
-#         indices = [index for index in range(len(targetList))]
-#     # Get list of tuples index/value for all indices we regard
-#     ls = [(ind, val) for (ind,val) in enumerate(targetList) if ind in indices]
-#     #Sort ls by the second value, ascending
-#     ls.sort(key=lambda y: y[1])
-#     output = [ind for (ind,val) in ls[:k]]
-#     output.sort()
-#     return output
 
 
 
-def transitiveClosure(relation:set)->set:
+def transitiveClosure(relation:Set[Tuple[str,str]])->Set[Tuple[str,str]]:
+    """Calculate the transitive closure of a relation using networkx
+
+    Args:
+        relation (Set[Tuple[str,str]]): A set containing tuples indicating the relations.
+
+    Returns:
+        Set[Tuple[str,str]]: The transitive closure of the relation.
     """
-        Returns the irreflexive transitive Closure of the given relation.
-        Computed on a graph using networkx
-    """
+
     digraph = nx.DiGraph(relation)
     closure = nx.transitive_closure(digraph, reflexive=None)
     return set(closure.edges())
 
 
-def transitiveReduction(relation:set)->set:
+def transitiveReduction(relation:Set[Tuple[str,str]])->Set[Tuple[str,str]]:
+    """Calculate the transitive reduction of a relation using networkx
+
+    Args:
+        relation (Set[Tuple[str,str]]): A set containing tuples indicating the relations.
+
+    Returns:
+        Set[Tuple[str,str]]: The transitive reduction of the relation.
     """
-        Returns the transitive reduction of the given *acyclic* relation
-        Computed on a graph using networkx
-    """
+
     digraph = nx.DiGraph(relation)
     reduction = nx.transitive_reduction(digraph)
     return set(reduction.edges())
 
-# def dfs_edges(relation, source, depth_limit=None):
-#     activities = set([y for x in relation for y in x])
-#     nodes = [source]
-#     visited = set()
-#     if depth_limit is None:
-#         depth_limit = len(activities)
-#     for start in nodes:
-#         if start in visited:
-#             continue
-#         visited.add(start)
-#         start_neighbors = [y for x,y in relation if x == start]
-#         stack = [(start, depth_limit, iter(start_neighbors))]
-#         while stack:
-#             parent, depth_now, children = stack[-1]
-#             try:
-#                 child = next(children)
-#                 if child not in visited:
-#                     yield parent, child
-#                     visited.add(child)
-#                     if depth_now > 1:
-#                         child_neighbors = [y for x,y in relation if x == child]
-#                         stack.append((child, depth_now - 1, iter(child_neighbors)))
-#             except StopIteration:
-#                 stack.pop()
+def irreflexive(relation:Set[Tuple[str,str]])->Set[Tuple[str,str]]:
+    """Make a relation irreflexive, by removing all tuples containing identical items.
 
+    Args:
+        relation (Set[Tuple[str,str]]): A set containing tuples indicating the relations.
 
-# def transReduction(relation:Set[Tuple[Event,Event]]):
-#     tr = set()
-#     nodes = [y for x in relation for y in x]
-#     descendants = {}
-#     # count before removing set stored in descendants
-#     check_count = Counter(
-#         [x for y,x in relation]
-#     )
-#     # check_count = dict(G.in_degree)
-
-#     for u in nodes:
-#         g_u = [y for x,y in relation if x == u] + [x for x,y in relation if y == u]
-#         u_nbrs = set(g_u)
-#         for v in g_u:
-#             if v in u_nbrs:
-#                 if v not in descendants:
-#                     descendants[v] = {y for x, y in nx.dfs_edges(relation, v)}
-#                 u_nbrs -= descendants[v]
-#             check_count[v] -= 1
-#             if check_count[v] == 0:
-#                 del descendants[v]
-#         tr.update((u, v) for v in u_nbrs)
-#     return tr
-
-def irreflexive(relation:set)->set:
-    """Returns an irreflexive version of the Relation"""
+    Returns:
+        Set[Tuple[str,str]]: The irreflexive relation.
+    """    
 
     return {(a,b) for a in relation for b in relation if a != b}
 
 def makeProgressBar(num_iters:int=None, message:str="", position:int=None):
-        return  tqdm(total=num_iters, desc=f"{message} :: ", position=position, leave=True)
+    """A wrapper to create a progress bar.
+
+    Args:
+        num_iters (int, optional): The number of expected iterations. Defaults to None.
+        message (str, optional): The message to show on the progress bar. Defaults to "".
+        position (int, optional): The `pos` argument of tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Returns:
+        Any: The tqdm progress bar.
+    """    
+
+    return  tqdm(total=num_iters, desc=f"{message} :: ", position=position, leave=True)
 
 def _getNumActivities(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->int:
+    """A helper function to calculate the number of activities in an event log.
+
+    Args:
+        log (EventLog): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        int: The number of distinct activities in the event log.
+    """    
+
     return len(_getActivityNames(log, activityName_key))
     
 def _getActivityNames(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[str]:
-    # try:
-    #     return list(log.attributes['meta_concept:named_events_total']['children'].keys())
-    # except:
-    # ret = set()
-    # for event in pm4py.convert_to_event_stream(log):
-    #     ret.add(event[activityName_key])
-    # return list(ret)
-    acts = set()
-    for case in log:
-        for event in case:
-            acts.add(event[activityName_key])
-    return sorted(list(acts))
+    """A helper function to find the distinct activities occurring in the event log.
+
+    Args:
+        log (EventLog): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        List[str]: A list of the distinct activities in the event log.
+    """    
+
+    return sorted(list({
+        event[activityName_key] for case in log for event in case
+    }))
 
 def _getActivityNames_LogList(logs:List[EventLog], activityName_key:str=xes.DEFAULT_NAME_KEY)->List[str]:
-    """
-        Get the List of activity names 
-    """
-    names = set()
-    for log in logs:
-        s = set(_getActivityNames(log, activityName_key=activityName_key))
-        names = names.union(s)
-    ret = list(names)
-    ret.sort()
-    return ret
+    """A helper function to find the distinct activities occurring in a list of event logs.
 
-def importLog(logpath, verbose:bool=True):
+    Args:
+        logs (List[EventLog]): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        List[str]: A list of the distinct activities in the event logs.
+    """ 
+
+    return sorted(list({
+        event[activityName_key]
+        for log in logs
+        for case in log
+        for event in case
+    }))
+
+def importLog(logpath:Any, verbose:bool=True)->EventLog:
+    """A wrapper for PM4Py's log importing function.
+
+    Args:
+        logpath (Any): The path to the event log file. Only XES Files supported.
+        verbose (bool, optional): Configures if a progress bar should be shown. Defaults to True.
+
+    Returns:
+        EventLog: The imported event log.
+    """    
+
     variant = xes_importer.Variants.ITERPARSE
     parameters = {variant.value.Parameters.SHOW_PROGRESS_BAR: verbose}
     return xes_importer.apply(logpath, variant=variant, parameters=parameters)
 
-def getTraceLog(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY):
+def getTraceLog(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[Tuple[str,...]]:
+    """Convert an event log to a list of traces. Traces represented as tuples of executed activities.
+
+    Args:
+        log (EventLog): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+
+    Returns:
+        List[Tuple[str,...]]: The Event Log represented as a list of tuples.
+    """    
+
     return [
         tuple(
             e[activityName_key] for e in case
@@ -171,19 +187,55 @@ def getTraceLog(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY):
         for case in log
     ]
 
-def readCSV_Lists(path):
+def readCSV_Lists(path:Any)->pd.DataFrame:
+    """A helper function to read a csv file and automatically convert the "Detected Changepoints" and "Actual Changepoints for Log" columns to Lists, and the "Duration" column to a datetime.timedelta.
+
+    Args:
+        path (Any): The path to the csv file.
+
+    Returns:
+        pd.Dataframe: The csv file as a pandas dataframe.
+    """
+
     return pd.read_csv(path, converters={"Detected Changepoints":ast.literal_eval, "Actual Changepoints for Log":ast.literal_eval, "Duration":convertToTimedelta})
 
-def convertToTimedelta(str_):
+def convertToTimedelta(str_:str)->timedelta:
+    """Convert a string of the form "HH:MM:SS" to a timedelta object.
+
+    Args:
+        str_ (str): The string to convert.
+
+    Returns:
+        timedelta: The corresponding timedelta object.
+    """    
+
     hours, minutes, seconds = [float(s) for s in str_.split(':')]
     return timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
-def calculateAverageAlgorithmDuration(csv:str):
+def calculateAverageAlgorithmDuration(csv:str)->float:
+    """From a CSV file-path, calculate the average duration of the corresponding algorithm.
+
+    Args:
+        csv (str): The path to the CSV File containing a "Duration" Column.
+
+    Returns:
+        float: The average duration of the algorithm.
+    """    
+
     c = pd.read_csv(csv, converters={'Duration':convertToTimedelta})
     durations = c['Duration'].tolist()
 
     return sum(durations,timedelta()) / len(durations)
 
 def calcAvgDuration(df:pd.DataFrame):
+    """For a Dataframe, calculate the average duration of the corresponding algorithm.
+
+    Args:
+        df (pd.Dataframe): The Dataframe corresponding to the algorithm, containing a "Duration" Column.
+
+    Returns:
+        float: The average duration of the algorithm.
+    """ 
+
     durations = df['Duration'].tolist()
     return sum(durations,timedelta()) / len(durations)
