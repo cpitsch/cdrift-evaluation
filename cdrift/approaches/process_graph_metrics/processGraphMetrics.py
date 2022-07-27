@@ -2,6 +2,7 @@ from typing import List
 from pm4py.objects.log.obj import EventLog
 from pm4py.util import xes_constants as xes
 from pm4py.algo.discovery.heuristics import algorithm as heuristics_miner
+from pm4py.objects.heuristics_net.obj import HeuristicsNet
 
 import numpy as np
 import math
@@ -65,69 +66,116 @@ def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=
 
 
 
-def _testEdgeOccurences(log1, log2, activities):
-        m1 = discoverModel(log1)
-        m2 = discoverModel(log2)
-        
-        
-        
-        occs1 = []
-        occs2 = []
-        for act1 in activities:
-            for act2 in activities:
-                occs1.append(m1.dfg.get((act1,act2),0))
-                occs2.append(m2.dfg.get((act1,act2),0))
+def _testEdgeOccurences(log1:EventLog, log2:EventLog, activities:List[str])->float:
+    """A helper function to compare the distribution of edge occurences inside the process models of two event logs found using the Heuristics Miner. Distributions compared using a G-Test.
 
-        m_star = np.zeros((2,len(occs1)))
-        m_star[0] = occs1
-        m_star[1] = occs2
+    Args:
+        log1 (EventLog): The first event log.
+        log2 (EventLog): The second event log.
+        activities (List[str]): The list of activities to consider. (In general the activities found in the event logs)
 
-        # Perform G-Test
-        ll = zip(occs1, occs2) # Observed = Detection window = second window = occs2
-        ll = [(x,y) for x,y in ll if x != 0 and y != 0]
-        try:
-            _, p, _, _ = contingency.chi2_contingency(ll)
-            return p
-        except: # Chi2 failed; Probably because no edge exists where neither observed nor expected are 0; So no edges are shared so no way they are the same
-            return 0
-        # _, pval = G_Test(occs1, occs2)
-        # return pval
+    Returns:
+        float: The  calculated p-value, using a G-Test
+    """    
+    
+    m1 = discoverModel(log1)
+    m2 = discoverModel(log2)
+    
+    
+    
+    occs1 = []
+    occs2 = []
+    for act1 in activities:
+        for act2 in activities:
+            occs1.append(m1.dfg.get((act1,act2),0))
+            occs2.append(m2.dfg.get((act1,act2),0))
 
-def _testNodeOccurences(log1, log2, activities):
-        m1 = discoverModel(log1)
-        m2 = discoverModel(log2)
-        
-        occs1 = []
-        occs2 = []
-        for act in activities:
-            occs1.append(m1.activities_occurrences.get(act,0))
-            occs2.append(m2.activities_occurrences.get(act,0))
+    m_star = np.zeros((2,len(occs1)))
+    m_star[0] = occs1
+    m_star[1] = occs2
 
-        m_star = np.zeros((2,len(occs1)))
-        m_star[0] = occs1
-        m_star[1] = occs2
+    # Perform G-Test
+    ll = zip(occs1, occs2) # Observed = Detection window = second window = occs2
+    ll = [(x,y) for x,y in ll if x != 0 and y != 0]
+    try:
+        _, p, _, _ = contingency.chi2_contingency(ll)
+        return p
+    except: # Chi2 failed; Probably because no edge exists where neither observed nor expected are 0; So no edges are shared so no way they are the same
+        return 0
+    # _, pval = G_Test(occs1, occs2)
+    # return pval
 
-        # Perform G-Test
-        ll = zip(occs1, occs2) # Observed = Detection window = second window = occs2
-        ll = [(x,y) for x,y in ll if x != 0 and y != 0]
-        try:
-            _, p, _, _ = contingency.chi2_contingency(ll)
-            return p
-        except:
-            return 0
-        # _, pval = G_Test(occs1, occs2)
-        # return pval
+def _testNodeOccurences(log1, log2, activities)->float:
+    """A helper function to compare the distribution of node occurences inside the process models of two event logs found using the Heuristics Miner. Distributions compared using a G-Test.
 
-def G_Test(expected, observed):
+    Args:
+        log1 (EventLog): The first event log.
+        log2 (EventLog): The second event log.
+        activities (List[str]): The list of activities to consider. (In general the activities found in the event logs)
+
+    Returns:
+        float: The  calculated p-value, using a G-Test
+    """ 
+
+    m1 = discoverModel(log1)
+    m2 = discoverModel(log2)
+
+    occs1 = []
+    occs2 = []
+    for act in activities:
+        occs1.append(m1.activities_occurrences.get(act,0))
+        occs2.append(m2.activities_occurrences.get(act,0))
+
+    m_star = np.zeros((2,len(occs1)))
+    m_star[0] = occs1
+    m_star[1] = occs2
+
+    # Perform G-Test
+    ll = zip(occs1, occs2) # Observed = Detection window = second window = occs2
+    ll = [(x,y) for x,y in ll if x != 0 and y != 0]
+    try:
+        _, p, _, _ = contingency.chi2_contingency(ll)
+        return p
+    except:
+        return 0
+    # _, pval = G_Test(occs1, occs2)
+    # return pval
+
+def G_Test(expected, observed)->float:
+    """A wrapper for the scipy.stats.chi2_contingency function, used to compute the G-Test
+
+    Args:
+        expected (Any): The expected distribution.
+        observed (Any): The observed distribution.
+
+    Returns:
+        float: The computed p-value
+    """
+
     # return 2 * sum(
     #     o*math.log(o/e) for o,e in zip(observed, expected) if o != 0 and e != 0 # This is only the statistic, not the pvalue
     # )
     return power_divergence(observed, expected, lambda_=0)
 
-def discoverModel(logWindow: EventLog, dependencyThresh:float=0.99):
+def discoverModel(logWindow: EventLog, dependencyThresh:float=0.99)->HeuristicsNet:
+    """A wrapper for the PM4Py Heuristics Miner implementation.
+
+    Args:
+        logWindow (EventLog): The event (sub-) log to be used for the discovery.
+        dependencyThresh (float, optional): The dependency threshold parameter used for the Heuristics Miner. Defaults to 0.99.
+
+    Returns:
+        HeuristicsNet: The discovered Heuristics Net
+    """    
     return heuristics_miner.apply_heu(logWindow, parameters={heuristics_miner.Variants.CLASSIC.value.Parameters.DEPENDENCY_THRESH: dependencyThresh})
 
 def safeUpdateBar(bar, n):
+    """A helper function to update a progress bar's total amount without breaking it.
+
+    Args:
+        bar (Any): The tqdm progress bar.
+        n (int): The new total goal amount of the progress bar.
+    """    
     fdict = bar.format_dict
     bar_n = fdict['n']
     bar_total = fdict['total']
@@ -138,6 +186,11 @@ def safeUpdateBar(bar, n):
     bar.update(n=n)
 
 def safeClose(bar):
+    """A helper function used to close a progress bar. If its goal total has not been reached yet, its total is set to the achieved amount before closing.
+
+    Args:
+        bar (Any): The progress bar.
+    """    
     fdict = bar.format_dict
     n = fdict['n']
     total = fdict['total']
@@ -147,7 +200,18 @@ def safeClose(bar):
         bar.refresh()
     bar.close()
 
-def calcM_Star_Total(log1, log2, activities:List):
+def calcM_Star_Total(log1:EventLog, log2:EventLog, activities:List[str])->np.ndarray:
+    """Calculate the M* Matrix as defined in the paper.
+
+    Args:
+        log1 (EventLog): The first event log.
+        log2 (Event Log): The second event log.
+        activities (List[str]): The list of activities to consider. (In general the activities found in the event logs)
+
+    Returns:
+        np.ndarray: The computed M* matrix.
+    """    
+
     activities.sort()
     m1 = discoverModel(log1)
     m2 = discoverModel(log2)
