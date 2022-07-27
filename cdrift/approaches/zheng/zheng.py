@@ -7,7 +7,18 @@ from numpy.typing import NDArray
 
 from cdrift.utils.helpers import makeProgressBar, _getActivityNames
 
-def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, progress=None):
+def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, progress=None)->np.ndarray:
+    """Calculate the Relation Matrix defined by Zheng et al. Contains for each Case, and each Eventually- and Directly-Follows relation a 1 if it holds in the case, and 0 otherwise.
+
+    Args:
+        log (EventLog): The event log.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        progress (Any, optional): A progress bar to update at every completed case. Defaults to None.
+
+    Returns:
+        np.ndarray: The calculated Relation Matrix. Contains for each Case, and each Eventually- and Directly-Follows relation a 1 if it holds in the case, and 0 otherwise. Dimensions: 2(num_activities^2) x len(log)
+    """    
+
     activities = _getActivityNames(log, activityName_key=activityName_key)
     num_activities = len(activities)
 
@@ -37,7 +48,17 @@ def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, 
             progress.update() # Completed  trace
     return np.append(drelmatrix,wrelmatrix,axis=0)
 
-def candidateCPDetection(relMatrixRow:NDArray, mrid:int):
+def candidateCPDetection(relMatrixRow:NDArray, mrid:int)->Set[int]:
+    """Extract candidate change points from a row of the Relation Matrix. These are points where the relation of this row held (or did not hold) for `mrid` consecutive traces, and then the relation changed.
+
+    Args:
+        relMatrixRow (NDArray): A row of the Relation Matrix.
+        mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
+
+    Returns:
+        Set[int]: A set of indices of the change point candidates.
+    """    
+
     P = set()
     begin = 0
     count = 0
@@ -55,7 +76,23 @@ def candidateCPDetection(relMatrixRow:NDArray, mrid:int):
     P.difference_update([1])
     return P
 
-def candidateChangepointsCombinataion(S:Set[int], mrid:int, eps:float, n:int):
+def candidateChangepointsCombinataion(S:Set[int], mrid:int, eps:float, n:int)->List[float]:
+    """Combine candidate change points by clustering them (Using DBScan), to find change point indices
+
+    Args:
+        S (Set[int]): The set of found candidate change points (From all Matrix rows).
+        mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
+        eps (float): The epsilon parameter used for the DBSCAN clustering algorithm.
+        n (int): The index of the last trace in the log. Zheng et al. consider this, and the first case, change point candidates as well.
+
+    Raises:
+        Exception: No neighbor change points were found for a detected change point. This should not occur due to the fact that `1` and `n` are also considered change points.
+
+    Returns:
+        List[float]: A list of change point indices. These are floats due to the use of a clustering algorithm.
+    """    
+
+
     minPts = 1
     result = [1,n]
 
@@ -99,24 +136,20 @@ def candidateChangepointsCombinataion(S:Set[int], mrid:int, eps:float, n:int):
             raise Exception("Couldn't find a place in results list for changepoint. This should not happen, contact the developer")
     return result
 
-def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NAME_KEY, progressPos:int=None):
-    """
-        Applies the concept drift detection by Zheng et al. for multiple different epsilon values. 
+def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NAME_KEY, progressPos:int=None)->List[float]:
+    """Apply concept drift detection using the algorithm of Zheng et al.
 
-        Makes use of the fact that the change point candidates are independent of epsilon, so this calculation does not have to be repeated for each epsilon
+    Args:
+        log (EventLog): The event log.
+        mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
+        eps (float): The epsilon parameter used for the DBSCAN clustering algorithm.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        progressPos (int, optional): The `pos` parameter for tqdm progress bars. In which line to print the progress bar. Defaults to None.
 
-        params:
-            log: pm4py.objects.log.obj.EventLog
-                - The Event Log which is to be analyzed
-            mrid:int
-                - The "Minimum Relation Invariance Distance"
-                    - The relation's value (1 or 0) must not change for at least this many traces in a row for its change to suggest a change point
-            eps:float
-                - The epsilon to use for the DBSCAN clustering of the Change point candidates.
-        returns:
-            cp: List[int]
-                - A list of the change points found.
+    Returns:
+        List[float]: A list of change point indices. These are floats due to the use of a clustering algorithm.
     """
+
     progress = makeProgressBar(len(log),"Extracting Relation Matrix for (Zheng)", position=progressPos)
     d = calcRelationMatrix(log, activityName_key=activityName_key, progress=progress)
     progress.set_description("Finding Changepoint Candidated (Zheng)")
@@ -133,23 +166,19 @@ def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NA
     return cp
 
 def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_key:str=xes.DEFAULT_NAME_KEY, progressPos:int=None):
-    """
-        Applies the concept drift detection by Zheng et al. for multiple different epsilon values. 
+    """Apply concept drift detection using the algorithm of Zheng et al. for multiple different epsilon values for DBSCAN.
 
-        Makes use of the fact that the change point candidates are independent of epsilon, so this calculation does not have to be repeated for each epsilon
+    Args:
+        log (EventLog): The event log.
+        mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
+        epsList (List[float]): A list of epsilon parameters used for the DBSCAN clustering algorithm.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        progressPos (int, optional): The `pos` parameter for tqdm progress bars. In which line to print the progress bar. Defaults to None.
 
-        params:
-            log: pm4py.objects.log.obj.EventLog
-                - The Event Log which is to be analyzed
-            mrid:int
-                - The "Minimum Relation Invariance Distance"
-                    - The relation's value (1 or 0) must not change for at least this many traces in a row for its change to suggest a change point
-            epsList:List[int]
-                - A list of epsilons to use for the DBSCAN clustering of the Change point candidates.
-        returns:
-            cps: Dict[fload: List[int]]
-                - A dictionary mapping every Epsilon found in ```epsList``` to the change points found for it.
+    Returns:
+        Dict[float, List[float]]: A dictionary mapping an epsilon parameter to the list of detected change point indices using this epsilon. The change points are floats due to the use of a clustering algorithm.
     """
+
     progress = makeProgressBar(len(log), "Extracting Relation Matrix for (Zheng)", position=progressPos)
     d = calcRelationMatrix(log, activityName_key=activityName_key, progress=progress)
 
@@ -178,8 +207,13 @@ def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_k
     return cps
 
 
-def _resetPBar_PreserveTime(progress, newTotal=None):
-    """Reset the given progress bar without resetting the time elapsed."""
+def _resetPBar_PreserveTime(progress, newTotal:int=None):
+    """A helper function to reset a progress bar without changing its elapsed time. Used to reset the completed steps to 0, and choose a new goal total amount.
+
+    Args:
+        progress (Any): The progress bar.
+        newTotal (int, optional): The new total value of the progress bar after resetting. Defaults to None.
+    """
 
     if newTotal is not None:
         progress.total = newTotal
