@@ -214,14 +214,14 @@ def calcEMD(dist1:List[Tuple[Iterable[str], float]], dist2: List[Tuple[Iterable[
         float: The computed Earth-Mover's Distance
 
     Examples:
-        >>> from cdrift.approaches.earthmover import calcEMD
-        >>> f1 = [(('a','b','d','f'),.5), (('a','c','f'),.4),(('a','b','e','f'),.1)]
-        >>> f2 = [(('a','b','d','f'),.5), (('a','c','f'),.35), (('a','b','d','e','f'),.15)]
-        >>> f3 = [(('a','b','d','f'),.2), (('a','c','f'),.7),(('a','b','e','f'),.1)]
-        >>> calcEMD(f1,f2)
-        >>> 0.049999999999999996 
-        >>> calcEMD(f1,f3)
-        >>> 0.14999999999999997
+    >>> from cdrift.approaches.earthmover import calcEMD
+    >>> f1 = [(('a','b','d','f'),.5), (('a','c','f'),.4),(('a','b','e','f'),.1)]
+    >>> f2 = [(('a','b','d','f'),.5), (('a','c','f'),.35), (('a','b','d','e','f'),.15)]
+    >>> f3 = [(('a','b','d','f'),.2), (('a','c','f'),.7),(('a','b','e','f'),.1)]
+    >>> calcEMD(f1,f2)
+    >>> 0.049999999999999996 
+    >>> calcEMD(f1,f3)
+    >>> 0.14999999999999997
     """    
 
     #Return calculated distances for faster execution in future iterations

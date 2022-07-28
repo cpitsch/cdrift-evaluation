@@ -79,9 +79,10 @@ def _getCausalFootprint(log:EventLog, activities:List[str]=None, activityName_ke
 # According to the definition in "Dealing With Concept Drifts in Process Mining" By R. P. Jagadeesh Chandra Bose, Wil M. P. van der Aalst, Indr˙e Žliobait˙e, and Mykola Pechenizkiy (DOI:10.1109/TNNLS.2013.2278313)
 def extractRelationTypeCount(logs:List[EventLog], activityName_key:str=xes.DEFAULT_NAME_KEY)->np.ndarray:
     """Extracts for each Log in logs: for every activity, the amount of activities which
-        - Always eventually follow it in a trace (index 0)
-        - Sometimes eventually follow it in a trace (index 1)
-        - Never eventually follow it in a trace (index 2), so where no trace exists where this activity is eventually followed by that other activity
+
+    - Always eventually follow it in a trace (index 0)
+    - Sometimes eventually follow it in a trace (index 1)
+    - Never eventually follow it in a trace (index 2), so where no trace exists where this activity is eventually followed by that other activity
 
     Args:
         logs (List[EventLog]): A list of event logs to extract the measure for. As this measure is a global measure, it is not defined on traces, but on (sub-) logs

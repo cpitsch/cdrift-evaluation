@@ -55,12 +55,12 @@ def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_divis
 def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn", verbose:bool=False):
     """ Calculates the F1 Score for a Changepoint Detection Result
 
-        - Considering a known changepoint at timepoint t:
-            - A True Positive is when a changepoint is detected within [t-`lag`, t+`lag`]
-            - A False Negative is when no changepoint is detected in this window around a known changepoint
-            - A False Positive is when there is no known changepoint in a window of `lag` around the detected one
-            - Note: Only one detected change point can be a TP for a given known changepoint, and vice versa. The assignment of detected change points to actual change points is done using a Linear Program (see assign_changepoints)
-        - From this the F1-Score is calculated as (2&middot;precision&middot;recall) / (precision+recall)
+    - Considering a known changepoint at timepoint t:
+        - A True Positive is when a changepoint is detected within [t-`lag`, t+`lag`]
+        - A False Negative is when no changepoint is detected in this window around a known changepoint
+        - A False Positive is when there is no known changepoint in a window of `lag` around the detected one
+        - Note: Only one detected change point can be a TP for a given known changepoint, and vice versa. The assignment of detected change points to actual change points is done using a Linear Program (see assign_changepoints)
+    - From this the F1-Score is calculated as (2&middot;precision&middot;recall) / (precision+recall)
 
     Args:
         detected (List[int]) : A list of indices of detected change point locations.
@@ -116,10 +116,11 @@ def calcTPR_FPR(detected:List[int], known:List[int], lag:int, num_possible_negat
 
 def assign_changepoints(detected_changepoints: List[int], actual_changepoints:List[int], lag_window:int=200) -> List[Tuple[int,int]]:
     """Assigns detected changepoints to actual changepoints using a LP.
-        With restrictions: 
-            - Detected point must be within lag_window of actual point. 
-            - Detected point can only be assigned to one actual point.
-            - Every actual point can have at most one detected point assigned. 
+    With restrictions: 
+
+    - Detected point must be within `lag_window` of actual point. 
+    - Detected point can only be assigned to one actual point.
+    - Every actual point can have at most one detected point assigned. 
 
         This is done by first optimizing for the number of assignments, finding how many detected change points could be assigned, without minimizing the \
         total lag. Then, the LP is solved again, minimizing the sum of squared lags, while keeping the number of assignments as high as possible.
@@ -130,11 +131,11 @@ def assign_changepoints(detected_changepoints: List[int], actual_changepoints:Li
         lag_window (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
 
     Examples:
-        >>> detected_changepoints = [1050, 934, 2100]
-        >>> actual_changepoints = [1000,1149,2000]
-        >>> assign_changepoints(detected_changepoints, actual_changepoints, lag_window=200)
-        >>> [(1050, 1149), (934, 1000), (2100, 2000)]
-        >>> # Notice how the actual changepoint 1000 gets a further detected changepoint to allow 1149 to also get a changepoint assigned
+    >>> detected_changepoints = [1050, 934, 2100]
+    >>> actual_changepoints = [1000,1149,2000]
+    >>> assign_changepoints(detected_changepoints, actual_changepoints, lag_window=200)
+    >>> [(1050, 1149), (934, 1000), (2100, 2000)]
+    >>> # Notice how the actual changepoint 1000 gets a further detected changepoint to allow 1149 to also get a changepoint assigned
 
     Returns:
         List[Tuple[int,int]]: List of tuples of (detected_changepoint, actual_changepoint) assignments
@@ -240,10 +241,10 @@ def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], 
         lag_window (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
 
     Examples:
-        >>> detected_changepoints = [1050, 934, 2100]
-        >>> actual_changepoints = [1000,1149,2000]
-        >>> get_avg_lag(detected_changepoints, actual_changepoints, lag_window=200)
-        >>> 88.33333333333333
+    >>> detected_changepoints = [1050, 934, 2100]
+    >>> actual_changepoints = [1000,1149,2000]
+    >>> get_avg_lag(detected_changepoints, actual_changepoints, lag_window=200)
+    >>> 88.33333333333333
 
     Returns:
         float: the average distance between detected changepoints and the actual changepoint they get assigned to
