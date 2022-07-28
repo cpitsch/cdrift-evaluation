@@ -6,8 +6,8 @@ I calculate the concurrency on the entire log while the revised paper discovers 
 from collections import Counter
 import math
 import typing
-from typing import FrozenSet, List, Tuple, Counter, Set, Union, Optional
-from deprecated import deprecated
+from typing import Any, FrozenSet, List, Tuple, Counter, Set, Union, Optional
+from deprecation import deprecated
 from numpy.typing import NDArray
 from pm4py.objects.log.obj import EventLog, Trace, Event
 import pm4py.util.xes_constants as xes
@@ -63,7 +63,7 @@ def _extractDirectlyFollowsLog(log:EventLog, activityName_key:str=xes.DEFAULT_NA
     return df
 
 def _caseToRun(case:Trace, concurrents:Set[Tuple[str,str]], activityName_key:str=xes.DEFAULT_NAME_KEY)->FrozenSet[Tuple[str,str]]:
-    """A helper function to convert a case into a run, as defined by Maaradji et al. in Fast And Accurate Business Process Drift Detection.
+    """A helper function to convert a case into a run. Runs defined by Maaradji et al. in Fast And Accurate Business Process Drift Detection.
 
     Args:
         case (Trace): The case
@@ -122,7 +122,7 @@ def extractRuns(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, prevRun
 
 
 def detectChangepoints_VerySlow(log:EventLog, windowSize:int, pvalue:float=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
-    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection.
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection. This is a very slow implementation, as it deviates from the implementation in the paper. Here, only the alpha relations occurring in the current window are regarded for the run calculation, hence, the runs must be recalculated in every window.
 
     Args:
         log (EventLog): The event log.
@@ -302,7 +302,7 @@ def detectChangepointsAdaptive(log:EventLog, windowSize:int, pvalue:float=0.05, 
 
 
 def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
-    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection.
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection. Here, for the runs calculation, we consider the alpha relations observed in the entire event log (Event relations from the "Future")
 
     Args:
         log (EventLog): The event log.
@@ -317,11 +317,11 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
     """  
     
     chis = numpy.ones(len(log))
-    alphas = set([
+    dfs = set([
         (case[i][activityName_key], case[i+1][activityName_key]) for case in log for i in range(len(case)-1)
     ])
     concurrents = {
-        (x,y) for x,y in alphas if (y,x) in alphas
+        (x,y) for x,y in dfs if (y,x) in dfs
     }
     progress = makeProgressBar(len(log), "Calculating runs ", position=progressBar_pos)
     #Calculate sequence of runs
@@ -336,38 +336,12 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
             runs.append(run)
             trace_to_run[trace] = run
         progress.update()
-    # Iterate over runs
+    # Iterate over runs and compute p-values
     for i in range(len(log)-(2*windowSize)):
         runs1 = runs[i:i + windowSize]
         runs2 = runs[i+windowSize:i + (2*windowSize)]
 
-        pop1 = Counter(runs1)
-        pop2 = Counter(runs2)
-
-        # Perform Chi^2 Test
-        keys  = list(set(pop2).union(set(pop1)))
-        ## Create Contingency Matrix for Reference Window
-        mr = numpy.zeros(len(keys)) #Matrix For reference Window
-        for run in pop1:
-            # Find the index of the run in the matrix by looking up in keys, then set the count, if run isnt in the detection window, then 0 by default
-            mr[keys.index(run)] = pop1[run]
-
-        #Create Contingency Matrix for Detection Window
-        md = numpy.zeros(len(keys)) #Matrix For detection Window. I dont really get why it's a matrix, so i assume this matrix has only 1 row and num_unique_runs columns
-        for run in pop2:
-            # Find the index of the run in the matrix by looking up in keys, then set the count, if run isnt in the detection window, then 0 by default
-            md[keys.index(run)] = pop2[run]
-        
-        # Contingency Table
-        contingency = numpy.array([mr,md])
-
-        # Apply Chi^2 Test on contingency matrix
-        # see https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
-        #chi2, p, dof, expected <- these are the return values of chi2_contingency; We are only interested in the p-value
-        _    , p, _  , _        = stats.chi2_contingency(contingency)
-        #We are testing for a changepoint at i+windowSize
-        chis[i+windowSize] = p
-        # progress.update()
+        chis[i+windowSize] = chi_square(runs1, runs2)
 
     # Find change points using the pvalues
 
@@ -386,3 +360,40 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
             changepoints.append(index)
     progress.close()
     return changepoints if not return_pvalues else (changepoints, chis)
+
+def chi_square(runs1:List[FrozenSet[Tuple[str,str]]],runs2:List[FrozenSet[Tuple[str,str]]])->float:
+    """A helper function to compute Chi-Square Test for two populations (sub-"logs" (runs))by computing the contingency table and then using the `chi2_contingency` function from scipy
+
+    Args:
+        runs1 (List[FrozenSet[Tuple[str,str]]]): Population 1. A List of Runs (FrozenSets of Tuples)
+        runs2 (List[FrozenSet[Tuple[str,str]]]): Population 2. A List of Runs (FrozenSets of Tuples)
+
+    Returns:
+        float: The computed p-value
+    """
+    pop1 = Counter(runs1)
+    pop2 = Counter(runs2)
+
+    # Perform Chi^2 Test
+    keys  = list(set(pop2).union(set(pop1)))
+    ## Create Contingency Matrix for Reference Window
+    mr = numpy.zeros(len(keys)) #Matrix For reference Window
+    for run in pop1:
+        # Find the index of the run in the matrix by looking up in keys, then set the count, if run isnt in the detection window, then 0 by default
+        mr[keys.index(run)] = pop1[run]
+
+    #Create Contingency Matrix for Detection Window
+    md = numpy.zeros(len(keys)) #Matrix For detection Window. I dont really get why it's a matrix, so i assume this matrix has only 1 row and num_unique_runs columns
+    for run in pop2:
+        # Find the index of the run in the matrix by looking up in keys, then set the count, if run isnt in the detection window, then 0 by default
+        md[keys.index(run)] = pop2[run]
+
+    # Contingency Table
+    contingency = numpy.array([mr,md])
+
+    # Apply Chi^2 Test on contingency matrix
+    # see https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chi2_contingency.html
+    #chi2, p, dof, expected <- these are the return values of chi2_contingency; We are only interested in the p-value
+    _    , p, _  , _        = stats.chi2_contingency(contingency)
+    return p
+    
