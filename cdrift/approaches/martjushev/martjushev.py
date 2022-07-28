@@ -358,7 +358,7 @@ def detectChange_JMeasure_KS(log:EventLog, windowSize:int, pvalue:float, return_
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
@@ -378,7 +378,7 @@ def detectChange_WindowCount_KS(log:EventLog, windowSize:int, pvalue:float, retu
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
@@ -398,7 +398,7 @@ def detectChange_JMeasure_MU(log:EventLog, windowSize:int, pvalue:float, return_
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
@@ -418,7 +418,7 @@ def detectChange_WindowCount_MU(log:EventLog, windowSize:int, pvalue:float, retu
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.

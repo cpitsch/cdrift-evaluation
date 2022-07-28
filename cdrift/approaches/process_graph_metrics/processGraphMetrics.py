@@ -11,7 +11,21 @@ from scipy.stats import power_divergence
 
 from cdrift.utils.helpers import _getActivityNames, makeProgressBar
 
-def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=0.0001, activityName_key: str = xes.DEFAULT_NAME_KEY, progressBarPosition:int=None):
+def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=0.0001, activityName_key: str = xes.DEFAULT_NAME_KEY, progressBarPosition:int=None)->List[int]:
+    """Apply concept drift detection using the Process Graph Metrics by Seeliger et al.
+
+    Args:
+        log (EventLog): The event log
+        windowSize (int): The initial window size to be used in the adaptive window approach.
+        maxWindowSize (int): The maximal size to grow the window to  before it is reset.
+        pvalue (float, optional): The p-value threshold. A pvalue below this indicates a change point. Defaults to 0.0001 (The recommended value by the paper authors).
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        progressBarPosition (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+
+    Returns:
+        List[int]: The list of detected change point indices.
+    """    
+    
     activities = sorted(_getActivityNames(log, activityName_key=activityName_key))
     i = 0
     pval2beforeE = 2 # Initialized greater than 1, so any found one is "better" so pval2before-1=1 which is not less than -0.5 (worst case)

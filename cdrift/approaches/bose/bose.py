@@ -295,7 +295,7 @@ def _detectChangeLocal(log:EventLog, stattest:str, measure:str, windowSize:int, 
         measure_window (int, optional): The window size to use for the measure extraction. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Raises:
         ValueError: if the string supplied as `measure` is invalid.
@@ -338,7 +338,7 @@ def detectChange_JMeasure_KS(log:EventLog, windowSize:int, measure_window:int=No
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
          np.ndarray: An array of the computed p-values. Dimensions 1x|log|
@@ -355,7 +355,7 @@ def detectChange_JMeasure_MU(log:EventLog, windowSize:int, measure_window:int=No
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
          np.ndarray: An array of the computed p-values. Dimensions 1x|log|
@@ -372,7 +372,7 @@ def detectChange_WC_KS(log:EventLog, windowSize:int, measure_window:int=None, ac
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
          np.ndarray: An array of the computed p-values. Dimensions 1x|log|
@@ -389,7 +389,7 @@ def detectChange_WC_MU(log:EventLog, windowSize:int, measure_window:int=None, ac
         measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
         show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
-        progressBarPos (int, optional): the `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
          np.ndarray: An array of the computed p-values. Dimensions 1x|log|
