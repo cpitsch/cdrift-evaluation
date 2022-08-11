@@ -118,23 +118,6 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
     plt.savefig(f"{path}")
     plt.close()
 
-def findMinima(signal,trim:int=0):
-    """
-        Detects minima in a signal
-        Trim takes values off the ends before detecting changes. This is used because of the long 0-Sequences at the beginning and end of the values. This should not influence the detection algorithm, so it is trimmed
-    """
-    # Only send the trimmed version into the peak-finding algorithm; Because the initial, and final zero-values are the default values, and no comparison was made there, so it doesn't count for the peak finding
-    peaks= find_peaks(-signal[trim:len(signal)-trim], width=80, prominence=0.1)[0]
-    return [x+trim for x in peaks] # Add the window that was lost from the beginning
-
-def findMaxima(signal, trim:int=0):
-    """
-        Detects maxima in a signal. 
-        Trim takes values off the ends before detecting changes. This is used because of the long 0-Sequences at the beginning and end of the values. This should not influence the detection algorithm, so it is trimmed
-    """
-    peaks= find_peaks(signal[trim:len(signal)-trim], width=80)[0]
-    return [x+trim for x in peaks] # Correct the found indices, these indices count from the beginning of the trimmed version instead of from the beginning of the untrimmed version (which we want)
-
 def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
     LINE_NR = position
     csv_name = "evaluation_results.csv"
@@ -177,8 +160,8 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     pvals_wc = pvals_wc / pow(len(activities),2)
 
     ## Visual Inspection
-    cp_j = findMinima(pvals_j, WINDOW_SIZE)
-    cp_wc = findMinima(pvals_wc, WINDOW_SIZE)
+    cp_j = bose.visualInspection(pvals_j, WINDOW_SIZE)
+    cp_wc = bose.visualInspection(pvals_wc, WINDOW_SIZE)
 
     durStr_J = calcDurFromSeconds(j_dur)
     durStr_WC = calcDurFromSeconds(wc_dur)
@@ -318,7 +301,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
     traces = earthmover.extractTraces(log)
     em_dists = earthmover.calculateDistSeries(traces, WINDOW_SIZE, progressBar_pos=LINE_NR)
 
-    cp_em = findMaxima(em_dists, WINDOW_SIZE)
+    cp_em = earthmover.visualInspection(em_dists, WINDOW_SIZE)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
