@@ -166,6 +166,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
         'Detected Changepoints': cp_j,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=cp_j, known=cp_locations, lag=F1_LAG),
         'Duration': durStr_J
     }, ignore_index=True)
 
@@ -176,6 +177,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
         'Detected Changepoints': cp_wc,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=cp_wc, known=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -213,6 +215,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Detected Changepoints': rb_j_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=rb_j_cp, known=cp_locations, lag=F1_LAG),
         'Duration': durStr_J
     }, ignore_index=True)
     resDF = resDF.append({
@@ -222,6 +225,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Detected Changepoints': rb_wc_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -259,6 +263,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=cp_em, known=cp_locations, lag=F1_LAG),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -293,6 +298,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position
         'Detected Changepoints': cp_runs,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=cp_runs, known=cp_locations, lag=F1_LAG),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -319,6 +325,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
         'Detected Changepoints': cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected=cp, known=cp_locations, lag=F1_LAG),
         'Duration': durStr
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -349,6 +356,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, pos
             'Detected Changepoints': cp,
             'Actual Changepoints for Log': cp_locations,
             'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+            'Average Lag': evaluation.get_avg_lag(detected=cp, known=cp_locations, lag=F1_LAG),
             'Duration': durStr
         }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
@@ -420,7 +428,7 @@ def init_dir(results_path, csv_name="evaluation_results.csv"):
     try:
         for approach in APPROACHES:
             results = pd.DataFrame(
-                columns=['Algorithm/Options', 'Log'] + approach_parameter_names[approach] + ['Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration']
+                columns=['Algorithm/Options', 'Log'] + approach_parameter_names[approach] + ['Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Average Lag', 'Duration']
             )
             try_save_df(results, paths[approach])
     except FileExistsError:
