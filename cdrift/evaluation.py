@@ -156,11 +156,6 @@ def assign_changepoints(detected_changepoints: List[int], actual_changepoints:Li
         }
 
         ####### Constraints #########
-        # As many assigments as possible
-        # prob += (
-        #     lpSum(x[dp, ap] for dp in detected_changepoints for ap in actual_changepoints) == tp,
-        #     "As_Many_As_Possible"
-        # )
 
         # Only assign at most one changepoint to each actual changepoint
         for ap in actual_changepoints:
