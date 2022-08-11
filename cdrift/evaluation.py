@@ -227,18 +227,18 @@ def assign_changepoints(detected_changepoints: List[int], actual_changepoints:Li
         if prob2_vars[dp, ap].varValue == 1
     ]
 
-def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], lag_window:int=200)->float:
+def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], lag:int=200)->float:
     """Calculates the average lag between detected and actual changepoints (Caution: false positives do not affect this metric!)
 
     Args:
         detected_changepoints (List[int]): Locations of detected changepoints
         actual_changepoints (List[int]): Locations of actual (known) changepoints
-        lag_window (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
+        lag (int, optional): How close must a detected change point be to an actual changepoint to be a true positive. Defaults to 200.
 
     Examples:
     >>> detected_changepoints = [1050, 934, 2100]
     >>> actual_changepoints = [1000,1149,2000]
-    >>> get_avg_lag(detected_changepoints, actual_changepoints, lag_window=200)
+    >>> get_avg_lag(detected_changepoints, actual_changepoints, lag=200)
     >>> 88.33333333333333
 
     Returns:
