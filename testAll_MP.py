@@ -130,7 +130,6 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 #################################
 
 def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
-    LINE_NR = position
     csv_name = "evaluation_results.csv"
 
     j_dur = 0
@@ -139,40 +138,16 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
-    #Extract the average pvalues of the test over all pairs of activities, as Bose et al. do it in the paper
-    activities = helpers._getActivityNames(log)
-    pvals_wc = np.zeros(len(log))
-    pvals_j = np.zeros(len(log))
-    progress_j_wc = helpers.makeProgressBar(pow(len(activities),2),"extracting average p-values for wc/j, activity pairs completed", position=LINE_NR)
-    for act1 in activities:
-        for act2 in activities:
-            #For the window Size in the feature extraction, default to average tracelength in log
 
-            j_start = default_timer()
-            j = bose.extractJMeasure(log, act1, act2)
-            j_dur += default_timer() - j_start
-
-            wc_start = default_timer()
-            wc = bose.extractWindowCount(log, act1, act2)
-            wc_dur += default_timer()-wc_start
-
-            j_start = default_timer()
-            new_pvals_j = bose.KSTest_2Sample_SlidingWindow(j,WINDOW_SIZE)
-            j_dur += default_timer() - j_start
-
-            wc_start = default_timer()
-            new_pvals_wc = bose.KSTest_2Sample_SlidingWindow(wc,WINDOW_SIZE)
-            wc_dur += default_timer()-wc_start
-
-            pvals_j += new_pvals_j
-            pvals_wc += new_pvals_wc
-            progress_j_wc.update()
-    pvals_j = pvals_j / pow(len(activities),2)
-    pvals_wc = pvals_wc / pow(len(activities),2)
-
-    ## Visual Inspection
+    j_start = default_timer()
+    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE)
     cp_j = bose.visualInspection(pvals_j, WINDOW_SIZE)
+    j_dur = default_timer() - j_start
+
+    wc_start = default_timer()
+    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE)
     cp_wc = bose.visualInspection(pvals_wc, WINDOW_SIZE)
+    wc_dur = default_timer() - wc_start
 
     durStr_J = calcDurFromSeconds(j_dur)
     durStr_WC = calcDurFromSeconds(wc_dur)
@@ -204,67 +179,22 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
-    progress_j_wc.close()
 
 def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position=None):
-    LINE_NR = position
     csv_name = "evaluation_results.csv"
     PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
-    
-    j_dur = 0
-    wc_dur = 0
 
-    activities = helpers._getActivityNames(log)
-    progress_j_wc_rb = helpers.makeProgressBar(pow(len(activities),2),"extracting j/wc for recursive bisection algorithm, activity pairs completed ", position=LINE_NR)
-    
-    sig_j = np.zeros((pow(len(activities),2), len(log)), ) # Axes will be swapped soon so sig[:x] splits based on time
-    sig_wc = np.zeros((pow(len(activities),2), len(log))) # Axes will be swapped soon so sig[:x] splits based on time
-    i = 0
-    for act1 in activities:
-        for act2 in activities:
-            j_start = default_timer()
-            js = bose.extractJMeasure(log, act1, act2)
-            sig_j[i] = js
-            j_dur += default_timer() - j_start
-
-            wc_start = default_timer()
-            wcs = bose.extractWindowCount(log, act1, act2)
-            sig_wc[i] = wcs
-            wc_dur += default_timer() - wc_start
-
-            progress_j_wc_rb.update()
-            i += 1
-    # Flip axes
-    sig_j = np.swapaxes(sig_j, 0,1)
-    sig_wc = np.swapaxes(sig_wc, 0,1)
-
-    def _getPValue(res)->float:
-        if isinstance(res,Number):
-            return res
-        else:
-            try:
-                return res.pvalue
-            except:
-                raise Exception("Statistical Test Result does not match criteria; Need either a float or an object with pvalue attribute")
-    def _applyAvgPVal(window1, window2, testingFunc):
-        pvals = []
-        w1 = np.swapaxes(window1, 0,1)
-        w2 = np.swapaxes(window2, 0,1)
-        for i in range(len(w1)):
-            pval = _getPValue(testingFunc(w1[i],w2[i]))
-            pvals.append(pval)
-        return np.mean(pvals)
     j_start = default_timer()
-    rb_j_cp, rb_j_pvals = martjushev.statisticalTesting_RecursiveBisection(sig_j, WINDOW_SIZE, PVAL, lambda x,y:_applyAvgPVal(x,y,bose.StatTest.KS), return_pvalues=True)
-    j_dur += default_timer() - j_start
+    rb_j_cp, rb_j_pvals = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, progressBarPos=position)
+    j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    rb_wc_cp, rb_wc_pvals = martjushev.statisticalTesting_RecursiveBisection(sig_wc, WINDOW_SIZE, PVAL,lambda x,y:_applyAvgPVal(x,y,bose.StatTest.KS), return_pvalues=True)
-    wc_dur += default_timer() - wc_start
-
+    rb_wc_cp, rb_wc_pvals = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, progressBarPos=position)
+    wc_dur = default_timer() - wc_start
+    
     durStr_J = calcDurFromSeconds(j_dur)
     durStr_WC = calcDurFromSeconds(wc_dur)
 
@@ -295,7 +225,6 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
         'Duration': durStr_WC
     }, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
-    progress_j_wc_rb.close()
 
 def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
