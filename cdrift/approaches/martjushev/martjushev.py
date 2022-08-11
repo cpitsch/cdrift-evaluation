@@ -7,6 +7,8 @@ from numbers import Number
 import scipy.stats as stats
 from pm4py.objects.log.obj import EventLog
 from pm4py.util import xes_constants as xes
+
+
 # The Recursive Bisection Algorithm for locating the point of change within two populaations as Described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
 def _locateChange(pop1:np.ndarray, pop2:np.ndarray, baseindex:int, test: Callable, pvalue:float=0.05, **kwargs)->int:
     """A helper function to locate the exact change point after a statistical test indicated a change point.
@@ -251,25 +253,31 @@ def detectChange_AvgSeries(signals:np.ndarray, windowSize:int, pvalue:float, tes
     progress = None
     if show_progress_bar:
         progress = makeProgressBar(num_iters=sig_length-(2*windowSize), message="Applying Recursive Bisection Algorithm. Traces Completed", position=progressBarPos)
-    for i in range(sig_length-(2*windowSize)):
-        collect_pvals = []
-        for signal in signals:
-            #Get the populations
-            window1 = signal[i:i+windowSize]
-            window2 = signal[i+windowSize:i+(2*windowSize)]
 
-            #Compare populations
-            p = testingFunction(window1,window2, **kwargs)
-            s_pval = _getPValue(p)
-            collect_pvals.append(s_pval)
-        pval = np.mean(collect_pvals)
+    def calc_avg_pval(window1, window2):
+        pvals = []
+        win1 = np.swapaxes(window1, 0,1)
+        win2 = np.swapaxes(window2, 0,1)
+        for i in range(len(win1)):
+            pval = _getPValue(testingFunction(win1[i],win2[i]))
+            pvals.append(pval)
+        return np.mean(pvals)
+
+
+    for i in range(sig_length-(2*windowSize)):
+
+        # Flip Axes to access "x (time)" axis instead of "Activity pairs" axis
+        window1 = np.swapaxes(signals,0,1)[i:i+windowSize]
+        window2 = np.swapaxes(signals,0,1)[i+windowSize:i+(2*windowSize)]
+
+        pval = calc_avg_pval(window1,window2)
         pvals[i+windowSize] = pval
         # If this indicates a changepoint and we do not skip this part (due to a close previous change point)
         if pval < pvalue and i >= skipuntil:
             #Changepoint detected
             changepoints.append(
                 # Apply recursive bisection to locate the change point
-                _locateChange(pop1=window1, pop2=window2, baseindex=i,test=testingFunction, pvalue=pvalue)
+                _locateChange(pop1=window1, pop2=window2, baseindex=i,test=calc_avg_pval, pvalue=pvalue)
             )
             #Continue searching at the first index after the second population
             skipuntil = i + (2*windowSize)
