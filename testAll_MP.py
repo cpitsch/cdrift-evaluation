@@ -8,7 +8,7 @@ parser.add_argument("-O", "--overwrite", required=False, help="If present and th
 parser.add_argument("-o", "--output", required=False, type=str, default="testAll/", help="Specifies the output Directory")
 parser.add_argument("-npp", "--no-parallel-progress", required=False, help="If present, the progress bars will all be on the same line, overwriting eachother.", action="store_true")
 parser.add_argument("-sh", "--shuffle", required=False, help="If present, the list of tasks is shuffled. This means the approaches are not worked through one-by-one. Also makes processes overwriting eachother in output file less likely. Specific protection for this is coming soon.", action="store_true")
-
+parser.add_argument("-lw", "--lag-window", required=False, type=int, default=200, help="Lag Window size for F1-Score calculation. Default: 200")
 parser.add_argument("-l", "--logs", required=False, type=str, default="noiseless", help="Which set of event logs to use. Defaults to \"noiseless\"", choices=["noiseless", "noisy", "approaches"])
 
 args = parser.parse_args(sys.argv[1:])
@@ -63,12 +63,19 @@ class color:
    MAGENTA = '\033[35m'
 
 
-DO_BOSE = False
-DO_MARTJUSHEV = False
-DO_EARTHMOVER = False
-DO_MAARADJI = False
-DO_PROCESS_GRAPH = False
-DO_ZHENG = False
+#TODO: Make this configuration accessible through arguments
+DO_APPROACHES = {
+    "Bose": True,
+    "Martjushev": True,
+    "Earthmover": True,
+    "Maaradji": True,
+    "ProcessGraph": True,
+    "Zheng": True
+}
+
+#################################
+############ HELPERS ############
+#################################
 
 def calcDurationString(startTime, endTime):
     """
@@ -117,6 +124,10 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
     plt.ylabel(ylabel)
     plt.savefig(f"{path}")
     plt.close()
+
+#################################
+##### Evaluation Functions ######
+#################################
 
 def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
     LINE_NR = position
@@ -440,122 +451,56 @@ def testSomething(idx:int, vals:int):
         testZhengDBSCAN(*arguments, position=idx)
 
 
-def init_dir(results_path):
-    global DO_BOSE
-    global DO_MARTJUSHEV
-    global DO_EARTHMOVER
-    global DO_MAARADJI
-    global DO_PROCESS_GRAPH
-    global DO_ZHENG
-    
+def init_dir(results_path, csv_name="evaluation_results.csv"):
+    APPROACHES = [approach for approach, do_approach in DO_APPROACHES.items() if do_approach] # The approaches that are enabled
+    paths = {
+        approach: Path(results_path, approach, csv_name)
+        for approach in APPROACHES
+    }
+
+
+    # Create the directories
     try:
-        if DO_BOSE:
-            os.makedirs(Path(results_path,"Bose/npy"), exist_ok=args.overwrite)
-        if DO_MARTJUSHEV:
-            os.makedirs(Path(results_path,"Martjushev/npy"), exist_ok=args.overwrite)
-        if DO_EARTHMOVER:
-            os.makedirs(Path(results_path,"Earthmover/npy"), exist_ok=args.overwrite)
-        if DO_MAARADJI:
-            os.makedirs(Path(results_path,"Maaradji/npy"), exist_ok=args.overwrite)
+        for approach in APPROACHES:
+            if DO_APPROACHES[approach]:
+                path = Path(paths[approach].parent)
+                if approach in ["Bose", "Martjushev", "Earthmover", "Maaradji"]:
+                    # If the approach also has some resulting time series (pvalues, emd, ...) that we want to save
+                    path = Path(path, "npy")
+                os.makedirs(Path(path), exist_ok=args.overwrite)
     except FileExistsError:
         print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the output folders already exists in the output directory. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
         sys.exit()
 
-    # Create CSV's
-    def try_save_csv(csv, path:Path):
-        if path.exists():
+    # Create the CSV Files to write to
+    def try_save_df(df:pd.DataFrame, path:Path):
+        """Save the Dataframe to the given path, raise an error if the file already exists and --overwrite is not set"""
+        if path.exists() and not args.overwrite:
             raise FileExistsError(f"The File {path} already exists")
         else:
-            csv.to_csv(path,index=False)
-        pass
-    csv_name = "evaluation_results.csv"
-    paths = {
-        "Bose":         Path(results_path,"Bose",csv_name),
-        "Martjushev":   Path(results_path,"Martjushev",csv_name),
-        "Maaradji":     Path(results_path,"Maaradji",csv_name),
-        "Earthmover":   Path(results_path,"Earthmover",csv_name),
-        "ProcessGraph": Path(results_path,"ProcessGraph",csv_name),
-        "Zheng":        Path(results_path,"Zheng",csv_name)
+            df.to_csv(path,index=False)
+
+    approach_parameter_names = {
+        "Bose": ["Window Size"],
+        "Martjushev": ["Window Size"],
+        "Maaradji": ["Window Size"],
+        "Earthmover": ["Window Size"],
+        "ProcessGraph": ["Window Size", "Max Adaptive Window"],
+        "Zheng": ["MRID", "Epsilon"]
     }
     try:
-        if DO_ZHENG:
-            os.makedirs(paths["Zheng"].parent, exist_ok=args.overwrite)
-        if DO_PROCESS_GRAPH:
-            os.makedirs(paths["ProcessGraph"].parent, exist_ok=args.overwrite)
-
+        for approach in APPROACHES:
+            results = pd.DataFrame(
+                columns=['Algorithm/Options', 'Log'] + approach_parameter_names[approach] + ['Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration']
+            )
+            try_save_df(results, paths[approach])
     except FileExistsError:
-        print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the output folders already exists in the output directory. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
-        sys.exit()
-    if args.overwrite:
-        # Create Evaluation Result CSV's
-        results = pd.DataFrame(
-            columns=['Algorithm/Options', 'Log', 'Window Size', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-        )
-        if DO_BOSE:
-            results.to_csv(paths["Bose"], index=False)
-        if DO_MARTJUSHEV:
-            results.to_csv(paths["Martjushev"], index=False)
-        if DO_MAARADJI:
-            results.to_csv(paths["Maaradji"], index=False)
-        if DO_EARTHMOVER:
-            results.to_csv(paths["Earthmover"], index=False)
-        if DO_PROCESS_GRAPH:
-            results = pd.DataFrame(
-                columns=['Algorithm/Options', 'Log', 'Window Size', 'Max Adaptive Window', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-            )
-            results.to_csv(paths["ProcessGraph"], index=False)
-        if DO_ZHENG:
-            results = pd.DataFrame(
-                columns=['Algorithm/Options', 'Log', 'MRID', 'Epsilon', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-            )
-            results.to_csv(paths["Zheng"], index=False)
-    else:
-        try:
-            results = pd.DataFrame(
-                columns=['Algorithm/Options', 'Log', 'Window Size', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-            )
-            if DO_BOSE:
-                try_save_csv(results,paths["Bose"])
-            if DO_MARTJUSHEV:
-                try_save_csv(results,paths["Martjushev"])
-            if DO_MAARADJI:
-                try_save_csv(results,paths["Maaradji"])
-            if DO_EARTHMOVER:
-                try_save_csv(results,paths["Earthmover"])
-            if DO_PROCESS_GRAPH:
-                results = pd.DataFrame(
-                    columns=['Algorithm/Options', 'Log', 'Window Size', 'Max Adaptive Window', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-                )
-                try_save_csv(results, paths["ProcessGraph"])
-            if DO_ZHENG:
-                results = pd.DataFrame(
-                    columns=['Algorithm/Options', 'Log', 'MRID', 'Epsilon', 'Detected Changepoints', 'Actual Changepoints for Log','F1-Score', 'Duration'],
-                )
-                try_save_csv(results, paths["Zheng"])
-        except FileExistsError:
-            print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the Output CSVs already exists. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
+        print(f"{Fore.RED}{color.BOLD}Error{Fore.RESET}: One of the Output CSVs already exists. To overwrite, use --overwrite or -O. To specify a different output file, use --output or -o")
 
 
 def main():
-    global DO_BOSE
-    global DO_MARTJUSHEV
-    global DO_EARTHMOVER
-    global DO_MAARADJI
-    global DO_PROCESS_GRAPH
-    global DO_ZHENG
-
-
-    #TODO: Make this accessible from outside
-    DO_BOSE = True
-    DO_MARTJUSHEV = True
-    DO_EARTHMOVER = True
-    DO_MAARADJI = True
-    DO_PROCESS_GRAPH = True
-    DO_ZHENG = True
-
-
     #Evaluation Parameters
-    F1_LAG = 200
+    F1_LAG = args.lag_window
 
     # Directory for Logs to test
     logPaths_Changepoints = None
@@ -594,9 +539,9 @@ def main():
     windowSizes    = [100, 200, 300, 400, 500,  600        ]
     maxWindowSizes = [200, 400, 600, 800, 1000, 1200       ] 
     
-    
+    # Special Parameters for the approach by Zheng et al.
     mrids = [100,250,500]
-    eps_modifiers = [0.1,0.2,0.3]
+    eps_modifiers = [0.1,0.2,0.3] # use x * mrid as epsilon, as the paper suggests
     eps_mrid_pairs = [
         (mrid,[mEps*mrid  for mEps in eps_modifiers]) 
         for mrid in mrids
@@ -610,12 +555,12 @@ def main():
     zhengDBSCAN_args  =  [(path, mrid,    epsList,      Path(RESULTS_PATH, "Zheng"), F1_LAG, cp_locations)           for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                               ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
-        + ([ ("zhengDBSCAN", args)   for args in zhengDBSCAN_args ] if DO_ZHENG          else [])
-        + ([ ("maaradji", args)      for args in maaradji_args    ] if DO_MAARADJI       else [])
-        + ([ ("pgraphmetrics", args) for args in pgraph_args      ] if DO_PROCESS_GRAPH  else [])
-        + ([ ("earthmover", args)    for args in em_args          ] if DO_EARTHMOVER     else [])
-        + ([ ("bose", args)          for args in bose_args        ] if DO_BOSE           else [])
-        + ([ ("martjushev", args)    for args in martjushev_args  ] if DO_MARTJUSHEV     else [])
+        + ([ ("zhengDBSCAN", args)   for args in zhengDBSCAN_args ] if DO_APPROACHES["Zheng"]          else [])
+        + ([ ("maaradji", args)      for args in maaradji_args    ] if DO_APPROACHES["Maaradji"]       else [])
+        + ([ ("pgraphmetrics", args) for args in pgraph_args      ] if DO_APPROACHES["ProcessGraph"]   else [])
+        + ([ ("earthmover", args)    for args in em_args          ] if DO_APPROACHES["Earthmover"]     else [])
+        + ([ ("bose", args)          for args in bose_args        ] if DO_APPROACHES["Bose"]           else [])
+        + ([ ("martjushev", args)    for args in martjushev_args  ] if DO_APPROACHES["Martjushev"]     else [])
     )
 
     if args.shuffle:
