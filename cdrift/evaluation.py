@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
 
-from cdrift.utils.helpers import calcAvgDuration
+from cdrift.utils.helpers import calcAvgDuration, convertToTimedelta
 
 def getTP_FP(detected:List[int], known:List[int], lag:int)-> Tuple[int,int]:
     """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.
@@ -244,7 +244,7 @@ def get_avg_lag(detected_changepoints:List[int], actual_changepoints:List[int], 
     Returns:
         float: the average distance between detected changepoints and the actual changepoint they get assigned to
     """
-    assignments = assign_changepoints(detected_changepoints, actual_changepoints, lag_window=lag_window)
+    assignments = assign_changepoints(detected_changepoints, actual_changepoints, lag_window=lag)
     avg_lag = 0
     for (dc,ap) in assignments:
         avg_lag += abs(dc-ap)
@@ -350,3 +350,20 @@ def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../sc
     plotScatterData(points, path=path, _format=_format)
 
 
+
+def get_pareto_optimal_approaches(dfs: List[pd.DataFrame], dimensions:List[str]=["F1-Score","Duration"]):
+    # Each approach correspnds to a point that is the mean of each dimension
+    points = []
+    for df in dfs:
+        name = df.iloc[-1]["Algorithm/Options"]
+        point = {dim: df[dim].mean() if dim != "Duration" else calcAvgDuration(df).seconds for dim in dimensions}
+        points.append((name, point))
+
+    #
+
+
+
+    return points
+
+def scatter_pareto_front():
+    pass
