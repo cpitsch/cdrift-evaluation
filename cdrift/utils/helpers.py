@@ -4,6 +4,7 @@ Helper functions for various random libraries, that have no immediate relation w
 
 import ast
 import datetime
+from pathlib import Path
 from typing import Any, List, Set, Tuple
 import numpy
 
@@ -227,7 +228,7 @@ def calculateAverageAlgorithmDuration(csv:str)->float:
 
     return sum(durations,timedelta()) / len(durations)
 
-def calcAvgDuration(df:pd.DataFrame):
+def calcAvgDuration(df:pd.DataFrame, column:str="Duration"):
     """For a Dataframe, calculate the average duration of the corresponding algorithm.
 
     Args:
@@ -237,5 +238,48 @@ def calcAvgDuration(df:pd.DataFrame):
         float: The average duration of the algorithm.
     """ 
 
-    durations = df['Duration'].tolist()
+    durations = df[column].tolist()
     return sum(durations,timedelta()) / len(durations)
+
+
+def import_test_results(baseDir):
+    bose_dir = Path(baseDir,"Bose/evaluation_results.csv")
+    b = readCSV_Lists(bose_dir)
+    b["Algorithm/Options"] = b["Algorithm/Options"].apply(
+        lambda x: 
+        "Bose J" if x == "Bose Average J" 
+        else "Bose WC" if x == "Bose Average WC" 
+        else "Bose ???"
+    )
+
+    b_j = b[b["Algorithm/Options"] == "Bose J"]
+    b_wc = b[b["Algorithm/Options"] == "Bose WC"]
+
+    martjushev_dir = Path(baseDir,"Martjushev/evaluation_results.csv")
+    m = readCSV_Lists(martjushev_dir)
+    m["Algorithm/Options"] = m["Algorithm/Options"].apply(
+        lambda x: 
+        "Martjushev J" if x == "Martjushev Recursive Bisection; Average J; p=0.55"
+        else "Martjushev WC" if x == "Martjushev Recursive Bisection; Average WC; p=0.55" 
+        else "Martjushev ???"
+    )
+    m_j = m[m["Algorithm/Options"] == "Martjushev J"]
+    m_wc = m[m["Algorithm/Options"] == "Martjushev WC"]
+
+    em_dir = Path(baseDir,"Earthmover/evaluation_results.csv")
+    em = readCSV_Lists(em_dir)
+
+    prodrift_dir = Path(baseDir, "Maaradji/evaluation_results.csv")
+    prodrift = readCSV_Lists(prodrift_dir)
+    prodrift["Algorithm/Options"] = prodrift["Algorithm/Options"].apply(lambda x: "ProDrift")
+
+    pgraph_dir = Path(baseDir, "ProcessGraph/evaluation_results.csv")
+    pgraphs = readCSV_Lists(pgraph_dir)
+    pgraphs["Algorithm/Options"] = pgraphs["Algorithm/Options"].apply(lambda x: "Process Graphs")
+
+    zheng_dir = Path(baseDir, "Zheng/evaluation_results.csv")
+    zheng = readCSV_Lists(zheng_dir)
+    zheng["Algorithm/Options"] = zheng["Algorithm/Options"].apply(lambda x: "Zheng")
+
+    dataframes = [b_j, b_wc, m_j, m_wc, prodrift, em, pgraphs, zheng]
+    return dataframes
