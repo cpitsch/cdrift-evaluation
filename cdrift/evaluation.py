@@ -2,7 +2,7 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -296,56 +296,103 @@ def plotROC(lag, df:pd.DataFrame, undefined_equals=0)->None:
     plt.ylabel("Recall")
     plt.show()
 
-def calcScatterData(dfs:List[pd.DataFrame], handle_nan_as=np.nan)->List[Dict]:
-    """Calculates the points for a scatterplot, plotting Calculation Time against the achieved F1-Score
+def _getNameFromDataframe(df):
+        # Return the Algorithm/Options of the first entry
+        return df.iloc[-1]["Algorithm/Options"]
+
+def _column_is_time(column, df):
+    # Check if the column has a time data type
+    return pd.core.dtypes.common.is_datetime_or_timedelta_dtype(df[column])
+
+def calculate_scatter_data(dfs: List[pd.DataFrame], dimensions:List[str]=["F1-Score","Duration"], handle_nan_as=0)->List[Tuple[str, Dict[str, Any]]]:
+    """Calculate the points for a Scatterplot. Uses the mean value of each column as the corresponding value.
 
     Args:
-        dfs (List[pd.DataFrame]): A list of dataframes (each one corresponding to an approach) to calculate the scatterplot data for.
-        handle_nan_as (Any, optional): How should an undefined F1-Score (Division by zero) be handled? Defaults to np.nan.
+        dfs (List[pd.DataFrame]): List of Dataframes for the Scatterplot. The "Algorithm/Options" column will be used to infer the name of the respective approach.
+        dimensions (List[str], optional): List of Dimensions to consider when extracting the points. Defaults to ["F1-Score","Duration"].
 
     Returns:
-        List[Dict]: A list of points, represented as dictionaries with keys "duration", "f1", and "name"
-    """
-    points:List[Dict] = []
+        List[Tuple[str, Dict[str, Any]]]: List of points for the scatter plot. Points represented as a tuple of the *name* of the algorithm and a dictionary with a value for each dimension.
+    """    
+    # Each approach correspnds to a point that is the mean of each dimension
+    points = []
     for df in dfs:
-        avgDur = calcAvgDuration(df).seconds
-        avgF1 = df["F1-Score"].fillna(handle_nan_as, inplace=False).mean()
-        points.append({
-            "duration": avgDur/60,
-            "f1": avgF1,
-            "name": df.iloc[-1]["Algorithm/Options"]
-        })
+        name = _getNameFromDataframe(df)
+        point = {dim: df[dim].fillna(handle_nan_as, inplace=False).mean() if not _column_is_time(dim, df) else calcAvgDuration(df, dim).seconds for dim in dimensions}
+        points.append((name, point))
     return points
 
-
-def plotScatterData(points: List[Dict], path="../scatter_fig.png", _format="png")->None:
-    """Plots a list of points (dictionaries in a scatterplot and saves it)
-
-    Args:
-        points (List[Dict]): A list of points, represented as dictionaries with keys "duration", "f1", and "name"
-        path (str, optional): Path where figure should be saved. Defaults to "../scatter_fig.png".
-        _format (str, optional): Format of the saved figure. Defaults to "png".
-    """    
-    fig,ax = plt.subplots()
-    for point in points:
-        ax.scatter(y=[point["f1"]], x=[point["duration"]], label=point["name"])
-    ax.set_ylabel("Mean F1-Score")
-    ax.set_ylim(0,1)
-    ax.set_xlabel("Mean Duration (Minutes)")
-    ax.legend(bbox_to_anchor=(1,1), loc="upper left")
-    ax.grid(True)
-    plt.savefig(path, bbox_inches='tight', format=_format)
-    plt.show()     
-
-def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../scatter_fig.png", _format="png")->None:
-    """Plots a scatterplot of the F1-Score against the duration of the algorithm, given a list of dataframes for each approach
+def get_pareto_optimal_points(points: List[Dict[str, Any]], lower_is_better_dimensions: List[str] = [])->List[Tuple[str, Dict[str, Any]]]:
+    """Get the pareto optimal points from a list of points. A pareto optimal point is a point for which no other exists that is better in every dimension.
 
     Args:
-        dfs (List[pd.DataFrame]): List of dataframes for each approach
-        handle_nan_as (Any, optional): How to handle an undefined F1-Score (Division by zero). Defaults to np.nan.
-        path (str, optional): Path where to save the figure. Defaults to "../scatter_fig.png".
-        _format (str, optional): Format of the Figure. Defaults to "png".
+        points (List[Dict[str, Any]]): The list of points, formatted as tuples: name of the algorithm, and dictionary of a value for each dimension.
+        lower_is_better_dimensions (List[str], optional): A List contianing all Dimensions where a *lower* value is better. Examples: Duration, Memory Consumption. Defaults to [].
+
+    Returns:
+        List[Tuple[str, Dict[str, Any]]]: A list of the points which are pareto optimal.
     """
-    points = calcScatterData(dfs, handle_nan_as)
-    plotScatterData(points, path=path, _format=_format)
 
+    return [
+        (name, point)
+        for idx, (name, point) in enumerate(points)
+        # If pareto-optimal
+        if all( # For every other point:
+            any( # This point is better or equal in at least one dimension
+                other_point[dim] <= point[dim] if not dim in lower_is_better_dimensions else other_point[dim] >= point[dim]
+                for dim in point.keys()
+            )
+            for _,other_point in [p for i,p in enumerate(points) if i != idx] # All other points
+        )
+    ]
+
+def scatter_pareto_front(dfs:List[pd.DataFrame],  x:str="Duration", y:str="F1-Score", handle_nan_as:Any=0, figsize:Tuple[int,int]=(8,5), lower_is_better_dimensions: List[str] = [], markers:Dict={}, colors:Dict={})->plt.figure:
+    """Plot the approaches as a scatterplot, considering dimensions `x` and `y`. Additionally, the Pareto front is indicated in the plot. Only two dimensions are supported. 
+
+    Args:
+        dfs (List[pd.DataFrame]): List of Dataframes for the Scatterplot. The "Algorithm/Options" column will be used to infer the name of the respective approach.
+        x (str, optional): The Dimension to consider for the X-Axis. Defaults to "Duration".
+        y (str, optional): The Dimension to consider for the Y-Axis. Defaults to "F1-Score".
+        handle_nan_as (Any, optional): How to handle NaN values in computing the mean. If NaN is chosen, the NaN values will be ignored. Defaults to 0.
+        figsize (Tuple[str,str], optional): The figsize parameter to be used for Figure Creation. Defaults to (8,5).
+        lower_is_better_dimensions (List[str], optional): A List contianing all Dimensions where a *lower* value is better. Examples: Duration, Memory Consumption. Defaults to [].
+        markers (Dict, optional): A dictionary mapping Approach names to markers to be used for Matplotlib Scatterplot. If not specified, Matplotlib will decide. Defaults to {}.
+        colors (Dict, optional): A dictionary mapping Approach names to markers to be used for Matplotlib Scatterplot. If not specified, Matplotlib will decide. Defaults to {}.
+
+    Returns:
+        plt.figure: The figure object containing the plot.
+    """    
+
+
+    # First get the pareto points
+    data = calculate_scatter_data(dfs, [x,y], handle_nan_as)
+    pareto_points = get_pareto_optimal_points(data, lower_is_better_dimensions=lower_is_better_dimensions)
+
+    fig = plt.figure(figsize=figsize)
+    # Plot the scatterplot
+    for name, point in data:
+        color = colors.get(name, None)
+        marker = markers.get(name, None)
+        plt.scatter(y=point[y], x=point[x], label=name, color=color, marker=marker)
+
+    # Plot the pareto front
+    pareto_points = sorted(pareto_points, key=lambda point: point[1][x])
+    plt.plot([0,pareto_points[0][1][x]], [0, pareto_points[0][1][y]], "red", linestyle=":", zorder=1)
+    # Plot a line between the neighboring pareto optimal points
+    for idx, (_, point) in enumerate(pareto_points[:-1]):
+        _,point2 = pareto_points[idx+1]
+        xs = [point[x], point2[x]]
+        ys = [point[y], point2[y]]
+        plt.plot(xs, ys, "red", linestyle=":", zorder=1)
+    # Plot a line from the last point horizontally off the canvas
+    xlim_before = plt.xlim()
+    ub = plt.xlim()[1]*2
+    plt.plot([pareto_points[-1][1][x], ub], [pareto_points[-1][1][y],pareto_points[-1][1][y]], "red", linestyle=":", zorder=1)
+    plt.xlim(xlim_before)
+
+    plt.xlabel(f"Mean {x}")
+    plt.ylabel(f"Mean {y}")
+    plt.grid(True)
+
+    plt.legend(bbox_to_anchor=(1,1), loc="upper left", title="Algorithm")
+    return fig
