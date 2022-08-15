@@ -296,6 +296,44 @@ def plotROC(lag, df:pd.DataFrame, undefined_equals=0)->None:
     plt.ylabel("Recall")
     plt.show()
 
+
+def scatter_f1_duration(dfs:List[pd.DataFrame]):
+    """Make a Scatterplot of the F1 Score versus the Duration of the approaches with the pareto front. Very specific method to be used on the results from running `testAll_MP.py`.
+
+    Args:
+        dfs (List[pd.DataFrame]): A list of DataFrames of evaluation results. Algorithms such as Bose, containing two different "algorithms" (J Measure and Window Count) should be split into two DataFrames.
+
+    Returns:
+        plt.figure: The figure object containing the plot.
+    """    
+
+    markers = {
+        "Bose J": "^", # triangle_up
+        "Bose WC": "^", # triangle_up
+        "Martjushev J": "s", # square
+        "Martjushev WC": "s", #square
+    }
+    colors = {
+        "Bose J": "#add8e6", # Light Blue
+        "Bose WC": "#000080", # Navy Blue
+        "Martjushev J": "#32cd32", # Navy Green
+        "Martjushev WC": "#006400", # Dark Green
+        "ProDrift": "#ff0000", # Red
+        "Earth Mover's Distance": "#ffa500", # Orange
+        "Process Graphs": "#ddcd10", # Some dark, rich yellow
+        "Zheng": "#800080" # Purple
+        # The rest is just whatever it wants to give them
+    }
+
+    for df in dfs:
+        # Turn Duration column into minutes
+        df["Duration"] = df["Duration"].apply(lambda x: x.seconds/60)
+        df.rename(columns={"Duration": "Duration (Minutes)"}, inplace=True)
+
+    fig = scatter_pareto_front(dfs,  x="Duration (Minutes)", y="F1-Score", figsize=(8,5), lower_is_better_dimensions = ["Duration (Minutes)"], colors=colors, markers=markers)
+    plt.ylim(-0.02, 1)
+    return fig
+
 def _getNameFromDataframe(df):
         # Return the Algorithm/Options of the first entry
         return df.iloc[-1]["Algorithm/Options"]
