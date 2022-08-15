@@ -349,21 +349,3 @@ def scatterF1_Duration(dfs:List[pd.DataFrame], handle_nan_as=np.nan, path="../sc
     points = calcScatterData(dfs, handle_nan_as)
     plotScatterData(points, path=path, _format=_format)
 
-
-
-def get_pareto_optimal_approaches(dfs: List[pd.DataFrame], dimensions:List[str]=["F1-Score","Duration"]):
-    # Each approach correspnds to a point that is the mean of each dimension
-    points = []
-    for df in dfs:
-        name = df.iloc[-1]["Algorithm/Options"]
-        point = {dim: df[dim].mean() if dim != "Duration" else calcAvgDuration(df).seconds for dim in dimensions}
-        points.append((name, point))
-
-    #
-
-
-
-    return points
-
-def scatter_pareto_front():
-    pass
