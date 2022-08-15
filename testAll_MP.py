@@ -71,11 +71,11 @@ class Approaches(enum.Enum):
 
 #TODO: Make this configuration accessible through arguments
 DO_APPROACHES = {
-    Approaches.BOSE: False,
-    Approaches.MARTJUSHEV: False,
-    Approaches.EARTHMOVER: False,
-    Approaches.MAARADJI: False,
-    Approaches.PROCESS_GRAPHS: False,
+    Approaches.BOSE: True,
+    Approaches.MARTJUSHEV: True,
+    Approaches.EARTHMOVER: True,
+    Approaches.MAARADJI: True,
+    Approaches.PROCESS_GRAPHS: True,
     Approaches.ZHENG: True
 }
 
