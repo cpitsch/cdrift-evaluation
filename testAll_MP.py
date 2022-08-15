@@ -1,3 +1,4 @@
+import enum
 import sys
 import argparse
 
@@ -15,13 +16,11 @@ args = parser.parse_args(sys.argv[1:])
 
 import math
 from multiprocessing import Pool, RLock, freeze_support
-from numbers import Number
 from timeit import default_timer
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
 
 
 from cdrift.approaches import earthmover, bose, martjushev
@@ -41,7 +40,6 @@ from cdrift.utils import helpers
 
 #Misc
 import os
-from os.path import exists
 from tqdm import tqdm
 from datetime import datetime
 from colorama import Fore
@@ -62,15 +60,23 @@ class color:
    END = '\033[0m'
    MAGENTA = '\033[35m'
 
+# Enum of approaches
+class Approaches(enum.Enum):
+    BOSE = "Bose"
+    MARTJUSHEV = "Martjushev"
+    EARTHMOVER = "Earthmover"
+    MAARADJI = "Maaradji"
+    PROCESS_GRAPHS = "ProcessGraph"
+    ZHENG = "Zheng"
 
 #TODO: Make this configuration accessible through arguments
 DO_APPROACHES = {
-    "Bose": True,
-    "Martjushev": True,
-    "Earthmover": True,
-    "Maaradji": True,
-    "ProcessGraph": True,
-    "Zheng": True
+    Approaches.BOSE: False,
+    Approaches.MARTJUSHEV: False,
+    Approaches.EARTHMOVER: False,
+    Approaches.MAARADJI: False,
+    Approaches.PROCESS_GRAPHS: False,
+    Approaches.ZHENG: True
 }
 
 #################################
@@ -158,29 +164,33 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     np.save(Path(res_path,f"npy/{savepath}_J"), pvals_j, allow_pickle=True)
     np.save(Path(res_path,f"npy/{savepath}_WC"), pvals_wc, allow_pickle=True)
 
-    resDF = pd.read_csv(Path(res_path,csv_name))
-    resDF = resDF.append({
+    new_entry_j = {
         'Algorithm/Options':"Bose Average J", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_j,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=cp_j, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_j, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_J
-    }, ignore_index=True)
-
-    resDF = resDF.append({
+    }
+    new_entry_wc = {
         'Algorithm/Options':"Bose Average WC", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_wc,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=cp_wc, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_wc, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
-    }, ignore_index=True)
+    }
+
+    resDF = pd.read_csv(Path(res_path,csv_name))
+    resDF = resDF.append(new_entry_j, ignore_index=True)
+    resDF = resDF.append(new_entry_wc, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
+
+    return (Approaches.BOSE,[new_entry_j, new_entry_wc])
 
 def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position=None):
     csv_name = "evaluation_results.csv"
@@ -207,28 +217,34 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
     np.save(Path(res_path,f"npy/{savepath}_J"), rb_j_pvals, allow_pickle=True)
     np.save(Path(res_path,f"npy/{savepath}_WC"), rb_wc_pvals, allow_pickle=True)
 
-    resDF = pd.read_csv(Path(res_path,csv_name))
-    resDF = resDF.append({
+    ret = []
+    new_entry_j = {
         'Algorithm/Options':f"Martjushev Recursive Bisection; Average J; p={PVAL}", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_j_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=rb_j_cp, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_J
-    }, ignore_index=True)
-    resDF = resDF.append({
+    }
+    new_entry_wc = {
         'Algorithm/Options':f"Martjushev Recursive Bisection; Average WC; p={PVAL}", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': rb_wc_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
-    }, ignore_index=True)
+    }
+
+    resDF = pd.read_csv(Path(res_path,csv_name))
+    resDF = resDF.append(new_entry_j, ignore_index=True)
+    resDF = resDF.append(new_entry_wc, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
+
+    return (Approaches.MARTJUSHEV, [new_entry_j, new_entry_wc])
 
 def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
@@ -256,17 +272,22 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
     plotPvals(em_dists,cp_em,cp_locations,Path(res_path,f"{savepath}_EarthMover_Distances"), autoScale=True)
     np.save(Path(res_path,f"npy/{savepath}_EarthMover_Distances"), em_dists, allow_pickle=True)
     resDF = pd.read_csv(Path(res_path,csv_name))
-    resDF = resDF.append({
+
+    new_entry = {
         'Algorithm/Options':"Earth Mover's Distance", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=cp_em, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_em, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr
-    }, ignore_index=True)
+    }
+    
+    resDF = resDF.append(new_entry, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
+
+    return (Approaches.EARTHMOVER,[new_entry])
 
 def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
@@ -291,17 +312,21 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position
     plotPvals(chis_runs, cp_runs, actual_cp, Path(res_path,f"{savepath}_P_Runs"), "Trace Number", "Chi P-Value")
     np.save(Path(res_path,f"npy/{savepath}_P_Runs"), chis_runs, allow_pickle=True)
     resDF = pd.read_csv(Path(res_path,csv_name))
-    resDF = resDF.append({
+
+    new_entry = {
         'Algorithm/Options':"Maaradji Runs", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_runs,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=cp_runs, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_runs, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr
-    }, ignore_index=True)
+    }
+    resDF = resDF.append(new_entry, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
+    
+    return (Approaches.MAARADJI,[new_entry])
 
 def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_locations, position=None):
     csv_name = "evaluation_results.csv"
@@ -317,7 +342,8 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
 
     # Save Results #
     resDF = pd.read_csv(Path(res_path,csv_name))
-    resDF = resDF.append({
+
+    new_entry = {
         'Algorithm/Options':"Process Graph Metrics", 
         'Log': logname,
         'Window Size': WINDOW_SIZE,
@@ -325,10 +351,13 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
         'Detected Changepoints': cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-        'Average Lag': evaluation.get_avg_lag(detected=cp, known=cp_locations, lag=F1_LAG),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr
-    }, ignore_index=True)
+    }
+    resDF = resDF.append(new_entry, ignore_index=True)
     resDF.to_csv(Path(res_path,csv_name), index=False)
+
+    return (Approaches.PROCESS_GRAPHS,[new_entry])
 
 def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, position):
     # candidateCPDetection is independent of eps, so we can calculate the candidates once and use them for multiple eps!
@@ -346,9 +375,12 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, pos
 
     # Save Results #
     resDF = pd.read_csv(Path(res_path,csv_name))
+
+    ret = []
     for eps in epsList:
         cp = cps[eps]
-        resDF = resDF.append({
+
+        new_entry = {
             'Algorithm/Options':f"Zheng DBSCAN", 
             'Log': logname,
             'MRID': mrid,
@@ -356,11 +388,13 @@ def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, pos
             'Detected Changepoints': cp,
             'Actual Changepoints for Log': cp_locations,
             'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
-            'Average Lag': evaluation.get_avg_lag(detected=cp, known=cp_locations, lag=F1_LAG),
+            'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr
-        }, ignore_index=True)
+        }
+        resDF = resDF.append(new_entry, ignore_index=True)
+        ret.append(new_entry)
     resDF.to_csv(Path(res_path,csv_name), index=False)
-
+    return (Approaches.ZHENG,ret)
 
 def testSomething(idx:int, vals:int):
     """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
@@ -374,24 +408,24 @@ def testSomething(idx:int, vals:int):
     if args.no_parallel_progress:
         idx = None
 
-    if name == "bose":
-        testBose(*arguments, position=idx)
-    elif name == "martjushev":
-        testMartjushev(*arguments, position=idx)
-    elif name == "earthmover":
-        testEarthMover(*arguments, position=idx)
-    elif name == "maaradji":
-        testMaaradji(*arguments, position=idx)
-    elif name == "pgraphmetrics":
-        testGraphMetrics(*arguments, position=idx)
-    elif name == "zhengDBSCAN":
-        testZhengDBSCAN(*arguments, position=idx)
+    if name == Approaches.BOSE:
+        return testBose(*arguments, position=idx)
+    elif name == Approaches.MARTJUSHEV:
+        return testMartjushev(*arguments, position=idx)
+    elif name == Approaches.EARTHMOVER:
+        return testEarthMover(*arguments, position=idx)
+    elif name == Approaches.MAARADJI:
+        return testMaaradji(*arguments, position=idx)
+    elif name == Approaches.PROCESS_GRAPHS:
+        return testGraphMetrics(*arguments, position=idx)
+    elif name == Approaches.ZHENG:
+        return testZhengDBSCAN(*arguments, position=idx)
 
 
 def init_dir(results_path, csv_name="evaluation_results.csv"):
     APPROACHES = [approach for approach, do_approach in DO_APPROACHES.items() if do_approach] # The approaches that are enabled
     paths = {
-        approach: Path(results_path, approach, csv_name)
+        approach: Path(results_path, approach.value, csv_name)
         for approach in APPROACHES
     }
 
@@ -418,12 +452,12 @@ def init_dir(results_path, csv_name="evaluation_results.csv"):
             df.to_csv(path,index=False)
 
     approach_parameter_names = {
-        "Bose": ["Window Size"],
-        "Martjushev": ["Window Size"],
-        "Maaradji": ["Window Size"],
-        "Earthmover": ["Window Size"],
-        "ProcessGraph": ["Window Size", "Max Adaptive Window"],
-        "Zheng": ["MRID", "Epsilon"]
+        Approaches.BOSE: ["Window Size"],
+        Approaches.MARTJUSHEV: ["Window Size"],
+        Approaches.MAARADJI: ["Window Size"],
+        Approaches.EARTHMOVER: ["Window Size"],
+        Approaches.PROCESS_GRAPHS: ["Window Size", "Max Adaptive Window"],
+        Approaches.ZHENG: ["MRID", "Epsilon"]
     }
     try:
         for approach in APPROACHES:
@@ -470,6 +504,11 @@ def main():
     RESULTS_PATH = Path(args.output)
 
     init_dir(RESULTS_PATH)
+    
+    RESULT_PATHS = {
+        approach: Path(RESULTS_PATH, approach.value)
+        for approach in Approaches
+    }
 
     # Parameter Settings #
     # Window Sizes that we test
@@ -484,20 +523,20 @@ def main():
         for mrid in mrids
     ]
 
-    bose_args         =  [(path, winSize,               Path(RESULTS_PATH,"Bose"), F1_LAG, cp_locations)             for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
-    martjushev_args   =  [(path, winSize,               Path(RESULTS_PATH,"Martjushev"), F1_LAG, cp_locations)       for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
-    em_args           =  [(path, winSize,               Path(RESULTS_PATH, "Earthmover"), F1_LAG, cp_locations)      for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
-    maaradji_args     =  [(path, winSize,               Path(RESULTS_PATH, "Maaradji"), F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
-    pgraph_args       =  [(path, winSize, adapMaxWin,   Path(RESULTS_PATH, "ProcessGraph"), F1_LAG, cp_locations)    for path, cp_locations in logPaths_Changepoints for winSize, adapMaxWin in zip(windowSizes, maxWindowSizes)             ]
-    zhengDBSCAN_args  =  [(path, mrid,    epsList,      Path(RESULTS_PATH, "Zheng"), F1_LAG, cp_locations)           for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                               ]
+    bose_args         =  [(path, winSize,               RESULT_PATHS[Approaches.BOSE]              , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    martjushev_args   =  [(path, winSize,               RESULT_PATHS[Approaches.MARTJUSHEV]        , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    em_args           =  [(path, winSize,               RESULT_PATHS[Approaches.EARTHMOVER]        , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    maaradji_args     =  [(path, winSize,               RESULT_PATHS[Approaches.MAARADJI]          , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                  ]
+    pgraph_args       =  [(path, winSize, adapMaxWin,   RESULT_PATHS[Approaches.PROCESS_GRAPHS]    , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize, adapMaxWin in zip(windowSizes, maxWindowSizes)             ]
+    zhengDBSCAN_args  =  [(path, mrid,    epsList,      RESULT_PATHS[Approaches.ZHENG]             , F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                               ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
-        + ([ ("zhengDBSCAN", args)   for args in zhengDBSCAN_args ] if DO_APPROACHES["Zheng"]          else [])
-        + ([ ("maaradji", args)      for args in maaradji_args    ] if DO_APPROACHES["Maaradji"]       else [])
-        + ([ ("pgraphmetrics", args) for args in pgraph_args      ] if DO_APPROACHES["ProcessGraph"]   else [])
-        + ([ ("earthmover", args)    for args in em_args          ] if DO_APPROACHES["Earthmover"]     else [])
-        + ([ ("bose", args)          for args in bose_args        ] if DO_APPROACHES["Bose"]           else [])
-        + ([ ("martjushev", args)    for args in martjushev_args  ] if DO_APPROACHES["Martjushev"]     else [])
+        + ([ (Approaches.ZHENG, args)            for args in zhengDBSCAN_args ] if DO_APPROACHES[Approaches.ZHENG          ]         else [])
+        + ([ (Approaches.MAARADJI, args)         for args in maaradji_args    ] if DO_APPROACHES[Approaches.MAARADJI       ]         else [])
+        + ([ (Approaches.PROCESS_GRAPHS, args)   for args in pgraph_args      ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS ]         else [])
+        + ([ (Approaches.EARTHMOVER, args)       for args in em_args          ] if DO_APPROACHES[Approaches.EARTHMOVER     ]         else [])
+        + ([ (Approaches.BOSE, args)             for args in bose_args        ] if DO_APPROACHES[Approaches.BOSE           ]         else [])
+        + ([ (Approaches.MARTJUSHEV, args)       for args in martjushev_args  ] if DO_APPROACHES[Approaches.MARTJUSHEV     ]         else [])
     )
 
     if args.shuffle:
@@ -507,12 +546,25 @@ def main():
 
     freeze_support()  # for Windows support
     tqdm.set_lock(RLock())  # for managing output contention
+    results = None
     with Pool(os.cpu_count()-args.save_cores,initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as p:
-        p.starmap(testSomething, enumerate(arguments))
+        results = p.starmap(testSomething, enumerate(arguments))
     elapsed_time = math.floor(default_timer() - time_start)
     # Write instead of print because of progress bars (although it shouldnt be a problem because they are all done)
     elapsed_formatted = datetime.strftime(datetime.utcfromtimestamp(elapsed_time), '%H:%M:%S')
     tqdm.write(f"{Fore.GREEN}The execution took {elapsed_formatted}{Fore.WHITE}")
+
+
+
+    approaches = {name for name, _ in results}
+    for approach in approaches:
+        return_values = [return_value for name, return_value in results if name == approach]
+        # Flatten the list, could do both in one, but that wouldnt look pretty
+        return_values = [item for return_value in return_values for item in return_value]
+
+        df = pd.DataFrame(return_values)
+        df.to_csv(Path(RESULT_PATHS[approach], "evaluation_results_final.csv"), index=False)
+
 
 if __name__ == '__main__':
     main()
