@@ -291,7 +291,7 @@ def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
 
 def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
