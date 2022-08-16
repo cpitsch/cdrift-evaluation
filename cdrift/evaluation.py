@@ -376,7 +376,7 @@ def get_pareto_optimal_points(points: List[Dict[str, Any]], lower_is_better_dime
         for idx, (name, point) in enumerate(points)
         # If pareto-optimal
         if all( # For every other point:
-            any( # This point is better or equal in at least one dimension
+            any( # This point is better or equal in at least one dimension --> the point is not better in *every* dimension
                 other_point[dim] <= point[dim] if not dim in lower_is_better_dimensions else other_point[dim] >= point[dim]
                 for dim in point.keys()
             )
