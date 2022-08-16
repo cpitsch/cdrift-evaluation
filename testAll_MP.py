@@ -435,7 +435,7 @@ def init_dir(results_path, csv_name="evaluation_results.csv"):
         for approach in APPROACHES:
             if DO_APPROACHES[approach]:
                 path = Path(paths[approach].parent)
-                if approach in ["Bose", "Martjushev", "Earthmover", "Maaradji"]:
+                if approach in [Approaches.BOSE, Approaches.MARTJUSHEV, Approaches.EARTHMOVER, Approaches.MAARADJI]:
                     # If the approach also has some resulting time series (pvalues, emd, ...) that we want to save
                     path = Path(path, "npy")
                 os.makedirs(Path(path), exist_ok=args.overwrite)
