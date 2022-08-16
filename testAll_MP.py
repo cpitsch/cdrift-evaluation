@@ -565,6 +565,13 @@ def main():
         df = pd.DataFrame(return_values)
         df.to_csv(Path(RESULT_PATHS[approach], "evaluation_results.csv"), index=False)
 
+    # Generate Figures for the results
+    dfs = helpers.import_test_results(RESULTS_PATH)
+    fig = evaluation.scatter_f1_duration(dfs)
+
+    fig.savefig(Path(RESULTS_PATH, "pareto-front.pdf"),format="pdf",bbox_inches='tight')
+    fig.savefig(Path(RESULTS_PATH, "pareto-front.png"),format="png",bbox_inches='tight')
+    plt.close(fig)
 
 if __name__ == '__main__':
     main()
