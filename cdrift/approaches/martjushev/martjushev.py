@@ -252,7 +252,7 @@ def detectChange_AvgSeries(signals:np.ndarray, windowSize:int, pvalue:float, tes
     skipuntil = -1
     progress = None
     if show_progress_bar:
-        progress = makeProgressBar(num_iters=sig_length-(2*windowSize), message="Applying Recursive Bisection Algorithm. Traces Completed", position=progressBarPos)
+        progress = makeProgressBar(num_iters=sig_length-(2*windowSize), message="Applying Recursive Bisection. Traces Completed", position=progressBarPos)
 
     def calc_avg_pval(window1, window2):
         pvals = []
@@ -303,7 +303,7 @@ def _extractAllJMeasures(log:EventLog, measure_window:int=None, activityName_key
     
     activities = _getActivityNames(log, activityName_key)
     if show_progress_bar:
-        progress=makeProgressBar(num_iters=len(activities)**2, message="Extracting Signal", position=progressBarPos)
+        progress=makeProgressBar(num_iters=len(activities)**2, message="Extracting J for Martjushev", position=progressBarPos)
     else:
         progress = None
     signals = np.empty(
@@ -337,7 +337,7 @@ def _extractAllWindowCounts(log:EventLog, measure_window:int=None, activityName_
     
     activities = _getActivityNames(log, activityName_key)
     if show_progress_bar:
-        progress=makeProgressBar(num_iters=len(activities)**2, message="Extracting Signal", position=progressBarPos)
+        progress=makeProgressBar(num_iters=len(activities)**2, message="Extracting WC for Martjushev", position=progressBarPos)
     else:
         progress=None
     signals = np.empty(
