@@ -136,7 +136,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 #################################
 
 def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, position=None):
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
 
     j_dur = 0
     wc_dur = 0
@@ -193,7 +193,7 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     return (Approaches.BOSE,[new_entry_j, new_entry_wc])
 
 def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position=None):
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
     PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -248,7 +248,7 @@ def testMartjushev(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, positi
 
 def testEarthMover(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position):
     LINE_NR = position
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -329,7 +329,7 @@ def testMaaradji(filepath, WINDOW_SIZE, res_path, F1_LAG, cp_locations, position
     return (Approaches.MAARADJI,[new_entry])
 
 def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_locations, position=None):
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
@@ -361,7 +361,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, res_path, F1_LAG, cp_l
 
 def testZhengDBSCAN(filepath, mrid, epsList, res_path, F1_LAG, cp_locations, position):
     # candidateCPDetection is independent of eps, so we can calculate the candidates once and use them for multiple eps!
-    csv_name = "evaluation_results.csv"
+    csv_name = "evaluation_results_temp.csv"
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
@@ -422,7 +422,7 @@ def testSomething(idx:int, vals:int):
         return testZhengDBSCAN(*arguments, position=idx)
 
 
-def init_dir(results_path, csv_name="evaluation_results.csv"):
+def init_dir(results_path, csv_name:str):
     APPROACHES = [approach for approach, do_approach in DO_APPROACHES.items() if do_approach] # The approaches that are enabled
     paths = {
         approach: Path(results_path, approach.value, csv_name)
@@ -503,7 +503,7 @@ def main():
 
     RESULTS_PATH = Path(args.output)
 
-    init_dir(RESULTS_PATH)
+    init_dir(RESULTS_PATH, csv_name="evaluation_results_temp.csv")
     
     RESULT_PATHS = {
         approach: Path(RESULTS_PATH, approach.value)
@@ -563,7 +563,7 @@ def main():
         return_values = [item for return_value in return_values for item in return_value]
 
         df = pd.DataFrame(return_values)
-        df.to_csv(Path(RESULT_PATHS[approach], "evaluation_results_final.csv"), index=False)
+        df.to_csv(Path(RESULT_PATHS[approach], "evaluation_results.csv"), index=False)
 
 
 if __name__ == '__main__':

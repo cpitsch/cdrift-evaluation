@@ -1,5 +1,7 @@
 # Ignore Sample Logs Folder due to large file sizes.
 Sample\ Logs/*
 
+# Ignore Temp Evaluation Results, only use the final results (evaluation_results.csv)
+evaluation_results_temp.csv
 # Ignore PyCache
 __pycache__
