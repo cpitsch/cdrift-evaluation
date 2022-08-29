@@ -142,7 +142,8 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
     durStr_WC = calcDurFromSeconds(wc_dur)
 
     new_entry_j = {
-        'Algorithm':"Bose J", 
+        'Algorithm':"Bose J",
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_j,
@@ -153,6 +154,7 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
     }
     new_entry_wc = {
         'Algorithm':"Bose WC", 
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_wc,
@@ -182,6 +184,7 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
 
     new_entry_j = {
         'Algorithm':"Martjushev J", 
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'P-Value': PVAL,
         'Window Size': WINDOW_SIZE,
@@ -193,6 +196,7 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
     }
     new_entry_wc = {
         'Algorithm':"Martjushev WC", 
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'P-Value': PVAL,
         'Window Size': WINDOW_SIZE,
@@ -225,6 +229,7 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
     # Save Results #
     new_entry = {
         'Algorithm':"Earth Mover's Distance", 
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_em,
@@ -252,7 +257,8 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
     # Save Results #
 
     new_entry = {
-        'Algorithm':"Maaradji Runs", 
+        'Algorithm':"Maaradji Runs",
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': WINDOW_SIZE,
         'Detected Changepoints': cp_runs,
@@ -279,6 +285,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, F1_LAG, cp_locations, 
 
     new_entry = {
         'Algorithm':"Process Graph Metrics", 
+        'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Min Adaptive Window': WINDOW_SIZE,
         'Max Adaptive Window': ADAP_MAX_WIN,
@@ -312,6 +319,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position):
 
         new_entry = {
             'Algorithm':"Zheng DBSCAN", 
+            'Log Source': Path(filepath).parent.name,
             'Log': logname,
             'MRID': mrid,
             'Epsilon': eps,
