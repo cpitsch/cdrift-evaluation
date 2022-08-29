@@ -334,9 +334,14 @@ def scatter_f1_duration(dfs:List[pd.DataFrame]):
     plt.ylim(-0.02, 1)
     return fig
 
-def _getNameFromDataframe(df):
+def _getNameFromDataframe(df, name_column="Algorithm/Options"):
         # Return the Algorithm/Options of the first entry
-        return df.iloc[-1]["Algorithm/Options"]
+        if name_column in df.columns:
+            return df.iloc[-1][name_column]
+        elif "Algorithm/Options" in df:
+            return df.iloc[-1]["Algorithm/Options"]
+        else:
+            return df.iloc[-1]["Algorithm"]
 
 def _column_is_time(column, df):
     # Check if the column has a time data type
