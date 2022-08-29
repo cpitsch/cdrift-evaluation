@@ -146,12 +146,12 @@ def testBose(filepath, WINDOW_SIZE, res_path:Path, F1_LAG, cp_locations, positio
     savepath = f"{logname}_W{WINDOW_SIZE}"# The file name without extension + the window size
 
     j_start = default_timer()
-    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE)
+    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE, progressBarPos=position)
     cp_j = bose.visualInspection(pvals_j, WINDOW_SIZE)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE)
+    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE, progressBarPos=position)
     cp_wc = bose.visualInspection(pvals_wc, WINDOW_SIZE)
     wc_dur = default_timer() - wc_start
 
