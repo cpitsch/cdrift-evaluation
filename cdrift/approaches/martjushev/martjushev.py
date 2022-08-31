@@ -471,3 +471,103 @@ def detectChange_WindowCount_MU(log:EventLog, windowSize:int, pvalue:float, retu
 #     cp, pvals = statisticalTesting_RecursiveBisection(sig, windowSize, pvalue, lambda x,y:_applyAvgPVal(x,y,stats.ks_2samp), return_pvalues)
 #     progress.close()
 #     return cp,pvals
+
+def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None, **kwargs)->List[int]:
+    """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
+
+    In each step, the average of the computed pvalue over all levels of the signal is considered. This is used, e.g, to detect change points using the J-Measure for every pair of activities.
+
+    Args:
+        signals (np.ndarray): The signal to detect changes in. The considered p-value is the average of the p-values of the statistical test for each level of the signal.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        pvalue (float): The p-value threshold, under which a pvalue indicates a change point.
+        step_size (int): The step size for increasing the window size in ADWIN.
+        testingFunction (Callable): The testing function used to compare populations.
+        return_pvalues (bool, optional): Configures whether the computed pvalues should be returned. Defaults to False.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+        progressBarPos (int, optional): The `pos` argument for tqdm progress bars. In which line to print the progress bar. Defaults to None.
+        **kwargs: Additional arguments to pass to the testing function.
+
+    Raises:
+        Exception: An exception is raised, if the different levels of the signal are not of the same length.
+
+    Returns:
+        List[int]: A list of detected change point indices. If `return_pvalues` is True, the computed pvalues are also returned.
+    """    
+
+    for i in range(len(signals)-1):
+        if len(signals[i]) != len(signals[i+1]):
+            raise Exception("Signals of inequal length in Average Series Recursive Bisection application!")
+    # As many pvals as the first signal has (all should be equal)
+    sig_length = len(signals[0])
+    pvals = np.ones(sig_length)
+    changepoints = []
+
+    # Shift 2 windows over the signal and apply the given Test
+    progress = None
+    if show_progress_bar:
+        # Use min_window to calculate upper bound on the number of iterations.
+        progress = makeProgressBar(num_iters=sig_length-(2*min_window), message="Applying ADWIN. Traces Completed", position=progressBarPos)
+
+    def calc_avg_pval(window1, window2):
+        pvals = []
+        win1 = np.swapaxes(window1, 0,1)
+        win2 = np.swapaxes(window2, 0,1)
+        for i in range(len(win1)):
+            pval = _getPValue(testingFunction(win1[i],win2[i]))
+            pvals.append(pval)
+        return np.mean(pvals)
+
+    current_window = min_window
+    i = 0
+    while i + (2*current_window) < sig_length:
+        # Flip Axes to access "x (time)" axis instead of "Activity pairs" axis
+        window1 = np.swapaxes(signals,0,1)[i:i+current_window]
+        window2 = np.swapaxes(signals,0,1)[i+current_window:i+(2*current_window)]
+
+        pval = calc_avg_pval(window1,window2)
+        pvals[i+current_window] = pval
+        # If this indicates a changepoint and we do not skip this part (due to a close previous change point)
+        if pval < pvalue:
+            #Changepoint detected
+            changepoints.append(
+                # Apply recursive bisection to locate the change point
+                _locateChange(pop1=window1, pop2=window2, baseindex=i,test=calc_avg_pval, pvalue=pvalue)
+            )
+            #Continue searching at the first index after the second population with the minimal window size
+            i += 2*current_window
+            current_window = min_window
+            if progress is not None:
+                progress.update(2*current_window)
+        else: # No change detected --> resize the windows
+            current_window += step_size
+            if current_window >= max_window:
+                i += current_window
+                progress.update(current_window)
+                current_window = current_window // 2
+
+        # Seems like he does this instead ?? 
+        # elif current_window >= max_window:
+        #     i += current_window
+        #     progress.update(current_window)
+        #     current_window = current_window // 2
+        # else:
+        #     current_window += step_size
+
+
+
+            # if current_window + step_size < max_window:
+            #     current_window += step_size
+            # else: # Inceasing size would exceed (or meet) max window size
+            #     # Split the right population into two populations and use those now
+            #     i += current_window # Start at beginning of right population
+            #     if progress is not None:
+            #         progress.update(current_window)
+            #     current_window = current_window //2
+
+    if progress is not None:
+        # "Finish" the progress bar, then close it.
+        progress.update(progress.total - progress.n)
+        progress.close()
+    return changepoints if not return_pvalues else (changepoints, [(idx,val) for idx,val in enumerate(pvals)])
