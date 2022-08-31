@@ -434,21 +434,23 @@ def main():
     df = pd.DataFrame(flattened_results)
     df.to_csv("evaluation_results.csv", index=False)
 
-    # Convert String Duration Column to Datetime
-    from cdrift.utils.helpers import convertToTimedelta
-    df['Duration'] = df['Duration'].apply(convertToTimedelta)
+    DO_PARETO_FRONT = False
+    if DO_PARETO_FRONT:
+        # Convert String Duration Column to Datetime
+        from cdrift.utils.helpers import convertToTimedelta
+        df['Duration'] = df['Duration'].apply(convertToTimedelta)
 
-    dfs = [
-        df[df['Algorithm'] == approach_name].copy(deep=True)
-        for approach_name in df["Algorithm"].unique()
-    ]
+        dfs = [
+            df[df['Algorithm'] == approach_name].copy(deep=True)
+            for approach_name in df["Algorithm"].unique()
+        ]
 
-    # Generate Figures for the results
-    fig = evaluation.scatter_f1_duration(dfs)
+        # Generate Figures for the results
+        fig = evaluation.scatter_f1_duration(dfs)
 
-    fig.savefig("pareto-front.pdf",format="pdf",bbox_inches='tight')
-    fig.savefig("pareto-front.png",format="png",bbox_inches='tight')
-    plt.close(fig)
+        fig.savefig("pareto-front.pdf",format="pdf",bbox_inches='tight')
+        fig.savefig("pareto-front.png",format="png",bbox_inches='tight')
+        plt.close(fig)
 
 if __name__ == '__main__':
     main()
