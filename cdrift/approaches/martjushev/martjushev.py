@@ -472,6 +472,7 @@ def detectChange_WindowCount_MU(log:EventLog, windowSize:int, pvalue:float, retu
 #     progress.close()
 #     return cp,pvals
 
+
 def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None, **kwargs)->List[int]:
     """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
 
@@ -508,6 +509,7 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
     progress = None
     if show_progress_bar:
         # Use min_window to calculate upper bound on the number of iterations.
+        # Progress bar to describe which traces have been "seen" in any population yet (ignoring initial population)
         progress = makeProgressBar(num_iters=sig_length-(2*min_window), message="Applying ADWIN. Traces Completed", position=progressBarPos)
 
     def calc_avg_pval(window1, window2):
@@ -518,7 +520,6 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
             pval = _getPValue(testingFunction(win1[i],win2[i]))
             pvals.append(pval)
         return np.mean(pvals)
-
     current_window = min_window
     i = 0
     while i + (2*current_window) < sig_length:
@@ -538,13 +539,12 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
             #Continue searching at the first index after the second population with the minimal window size
             i += 2*current_window
             current_window = min_window
-            if progress is not None:
-                progress.update(2*current_window)
+            safe_update_bar(progress, 2*current_window)
         else: # No change detected --> resize the windows
             current_window += step_size
+            safe_update_bar(progress, step_size)
             if current_window >= max_window:
                 i += current_window
-                progress.update(current_window)
                 current_window = current_window // 2
 
         # Seems like he does this instead ?? 
