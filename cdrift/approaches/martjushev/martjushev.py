@@ -506,6 +506,28 @@ def _my_adwin(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, 
     return changepoints if not return_pvalues else (changepoints, pvals)
 
 def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, threshold:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None):
+    """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
+
+    In each step, the average of the computed pvalue over all levels of the signal is considered. This is used, e.g, to detect change points using the J-Measure for every pair of activities.
+
+    Args:
+        signals (np.ndarray): The signal to detect changes in. The considered p-value is the average of the p-values of the statistical test for each level of the signal.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        threshold (float): The p-value threshold, under which a pvalue indicates a change point.
+        step_size (int): The step size for increasing the window size in ADWIN.
+        testingFunction (Callable): The testing function used to compare populations.
+        return_pvalues (bool, optional): Configures whether the computed pvalues should be returned. Defaults to False.
+        show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
+        progressBarPos (int, optional): The `pos` argument for tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Raises:
+        Exception: An exception is raised, if the different levels of the signal are not of the same length.
+
+    Returns:
+        List[int]: A list of detected change point indices. If `return_pvalues` is True, the computed pvalues are also returned.
+    """
+
     def calc_avg_pval(window1, window2):
         pvals = []
         win1 = np.swapaxes(window1, 0,1)
@@ -519,6 +541,10 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
         pop1 = np.swapaxes(signal,0,1)[pop1_start:pop1_end]
         pop2 = np.swapaxes(signal,0,1)[pop2_start:pop2_end]
         return calc_avg_pval(pop1,pop2)
+
+    for i in range(len(signals)-1):
+        if len(signals[i]) != len(signals[i+1]):
+            raise Exception("Signals of inequal length in Average Series Recursive Bisection application!")
 
     sig_length = len(signals[0])
 
