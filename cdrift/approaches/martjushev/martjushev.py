@@ -402,7 +402,7 @@ def detectChange_WindowCount_MU(log:EventLog, windowSize:int, pvalue:float, retu
     return detectChange_AvgSeries(signals, windowSize, pvalue, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
 
 
-def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None, **kwargs)->List[int]:
+def _my_adwin(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None, **kwargs)->List[int]:
     """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
 
     In each step, the average of the computed pvalue over all levels of the signal is considered. This is used, e.g, to detect change points using the J-Measure for every pair of activities.
@@ -431,7 +431,7 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
             raise Exception("Signals of inequal length in Average Series Recursive Bisection application!")
     # As many pvals as the first signal has (all should be equal)
     sig_length = len(signals[0])
-    pvals = np.ones(sig_length)
+    pvals = [(idx,1) for idx in range(min_window)]
     changepoints = []
 
     # Shift 2 windows over the signal and apply the given Test
@@ -457,7 +457,8 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
         window2 = np.swapaxes(signals,0,1)[i+current_window:i+(2*current_window)]
 
         pval = calc_avg_pval(window1,window2)
-        pvals[i+current_window] = pval
+        # pvals[i+current_window] = pval
+        pvals.append((i+current_window,pval))
         # If this indicates a changepoint and we do not skip this part (due to a close previous change point)
         if pval < pvalue:
             #Changepoint detected
@@ -495,8 +496,109 @@ def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:
             #         progress.update(current_window)
             #     current_window = current_window //2
 
+    # Fill up the remaining pvalues with 1 padding
+    pvals += [(idx, 1) for idx in range(pvals[-1][0]+1, sig_length)]
+
     if progress is not None:
         # "Finish" the progress bar, then close it.
         progress.update(progress.total - progress.n)
         progress.close()
-    return changepoints if not return_pvalues else (changepoints, [(idx,val) for idx,val in enumerate(pvals)])
+    return changepoints if not return_pvalues else (changepoints, pvals)
+
+def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, threshold:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None):
+    def calc_avg_pval(window1, window2):
+        pvals = []
+        win1 = np.swapaxes(window1, 0,1)
+        win2 = np.swapaxes(window2, 0,1)
+        for i in range(len(win1)):
+            pval = _getPValue(testingFunction(win1[i],win2[i]))
+            pvals.append(pval)
+        return np.mean(pvals)
+
+    def calculatePValue(signal, pop1_start, pop1_end, pop2_start, pop2_end):
+        pop1 = np.swapaxes(signal,0,1)[pop1_start:pop1_end]
+        pop2 = np.swapaxes(signal,0,1)[pop2_start:pop2_end]
+        return calc_avg_pval(pop1,pop2)
+
+    sig_length = len(signals[0])
+
+    # Initializing population vector
+    population1StartIdx = 0 #Inclusive
+    population1EndIdx = min_window # Exclusive
+
+    population2StartIdx = population1EndIdx #Inclusive
+    population2EndIdx =  population2StartIdx + min_window #Exclusive
+
+    pvals = np.ones(sig_length)
+
+    observedDriftPoints = []
+
+    progress = None
+    if show_progress_bar:
+        # Use min_window to calculate upper bound on the number of iterations.
+        progress = makeProgressBar(num_iters=sig_length-(2*min_window), message="Applying ADWIN. Traces Completed", position=progressBarPos)
+
+    stop = False
+
+    while (True):
+        curStepSize1 = step_size
+        curStepSize2 = curStepSize1 + step_size
+
+        # For each activity pair calculate p-value
+        sp = calculatePValue(signals, population1StartIdx, population1EndIdx, population2StartIdx, population2EndIdx)
+
+        # Output p-values for plotting
+        plotX = population1EndIdx
+        for i in range(curStepSize1):
+            if i >= sig_length:
+                break
+            pvals[plotX + i] = sp
+
+
+        # Drift point search
+        if sp < threshold:
+            # int driftPoint = cah.searchStep(matrix, population1StartIdx, population2EndIdx);
+            driftPoint = _locateChange(
+                np.swapaxes(signals,0,1)[population1StartIdx:population1EndIdx],
+                np.swapaxes(signals,0,1)[population2StartIdx:population2EndIdx],
+                population1StartIdx,
+                calc_avg_pval,
+                threshold
+            )
+
+            observedDriftPoints.append(driftPoint)
+            #Reset population to min size
+            safe_update_bar(progress, 2*min_window)
+            population1StartIdx = population2EndIdx + 1 #Inclusive
+            # Hack to prevent IndexOutOfBounds
+            if population1StartIdx >= sig_length:
+                break
+            
+            population1EndIdx = population1StartIdx + min_window; #Exclusive
+            population2StartIdx = population1EndIdx
+            population2EndIdx = population2StartIdx + min_window; #Exclusive
+        #Reduce population size if reached maximum
+        elif population1EndIdx-population1StartIdx >= max_window or population2EndIdx-population2StartIdx >= max_window:
+            population1StartIdx = population1EndIdx
+            population1EndIdx = (population1StartIdx + population2EndIdx) //2 # The middle, aka average point
+            population2StartIdx = population1EndIdx
+        else:
+            #Add new traces to populations
+            population1EndIdx += curStepSize1
+            population2StartIdx += curStepSize1
+            population2EndIdx += curStepSize2
+            safe_update_bar(progress, 2*step_size)
+
+        #Reached the end
+        if stop:
+            break
+
+        #If out of bounds, use the last trace as population end and terminate on next iteration
+        if population2EndIdx >= sig_length - 1:
+            population2EndIdx = sig_length
+            population1EndIdx = (population1StartIdx + population2EndIdx) // 2
+            population2StartIdx = population1EndIdx
+            stop = True
+
+
+    return observedDriftPoints if not return_pvalues else (observedDriftPoints, pvals)
