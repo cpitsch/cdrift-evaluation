@@ -118,40 +118,6 @@ def statisticalTesting_RecursiveBisection(signal:np.ndarray, windowSize:int, pva
     return changepoints if not return_pvalues else (changepoints, pvals)
 
 
-# The Adaptive Window Changepoint Detection Algorithm as Described in "Change Point Detection and Dealing with Gradual and Multi-Order Dynamics in Process Mining" by Martjushev, Bose, Van Der Aalst
-# def adaptiveWindowChangepoints(signal:np.ndarray, minWindowSize:int, maxWindowSize:int, pvalue:float, stepSize:int, testingFunction:Callable, **kwargs):
-#     index = 0
-#     windowSize = minWindowSize
-#     p_left = signal[index:index+windowSize]
-#     p_right = signal[index+windowSize:index+(2*windowSize)]
-#     changepoints = []
-#     while index + 2 * (windowSize) <= len(signal):
-#         p = _getPValue( # Get the pvalue from the result of the Statistical Test
-#             testingFunction(p_left, p_right, **kwargs)
-#         )
-#         if p < pvalue: # If there is a significant difference between the populations
-#             #Locate the chancge
-#             changepoints.append(_locateChange(p_left, p_right, index, testingFunction, **kwargs))
-#             #Continue at the first index after the second Population
-#             index += 2*windowSize
-#             # Calculate the new Populations
-#             p_left = signal[index:index+windowSize]
-#             p_right = signal[index+windowSize:index+(2*windowSize)]
-#             windowSize = minWindowSize # Reset the windowSize to minWindowSize
-#         else: # No significant difference
-#             windowSize += stepSize # Increase the window size
-#             # Recalculate the Populations
-#             p_left = signal[index:index+windowSize]
-#             p_right = signal[index+windowSize:index+(2*windowSize)]
-#             # If we have exceeded the maximum window Size
-#             if windowSize >= maxWindowSize:
-#                 # Discard the left population since it is "old" information now
-#                 p_left = p_right[:len(p_right//2)]
-#                 p_right_ = p_right[len(p_right//2):] # Helper to avoid problems
-#                 index += windowSize  # set the index to the beginning of the second window
-#                 p_right = p_right_
-#     return changepoints
-
 def _applyAvgPVal(window1, window2, testingFunc:Callable)->float:
     """A helper function to calculate the average pvalue for a multivariate signal (Relevant for applying the test on all pairs of activities).
 
@@ -434,43 +400,6 @@ def detectChange_WindowCount_MU(log:EventLog, windowSize:int, pvalue:float, retu
     
     signals = _extractAllWindowCounts(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
     return detectChange_AvgSeries(signals, windowSize, pvalue, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
-
-
-# def detectChange_JMeasure_KS(log:EventLog, windowSize:int, pvalue:float, return_pvalues:bool=False, measure_window:int=None, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None):
-#     activities = _getActivityNames(log)
-#     if show_progress_bar:
-#         progress = makeProgressBar(pow(len(activities),2),"extracting j for recursive bisection algorithm, activity pairs completed ", position=progressBarPos)
-#     else:
-#         progress = None
-#     sig = np.zeros((pow(len(activities),2), len(log)), ) # Axes will be swapped soon so sig[:x] splits based on time
-#     i = 0
-#     for act1 in activities:
-#         for act2 in activities:
-#             js = extractJMeasure(log, act1, act2)
-#             sig[i] = js
-#             progress.update()
-#             i += 1
-#     # Flip axes
-#     sig = np.swapaxes(sig, 0,1)
-#     def _getPValue(res)->float:
-#         if isinstance(res,Number):
-#             return res
-#         else:
-#             try:
-#                 return res.pvalue
-#             except:
-#                 raise Exception("Statistical Test Result does not match criteria; Need either a float or an object with pvalue attribute")
-#     def _applyAvgPVal(window1, window2, testingFunc):
-#         pvals = []
-#         w1 = np.swapaxes(window1, 0,1)
-#         w2 = np.swapaxes(window2, 0,1)
-#         for i in range(len(w1)):
-#             pval = _getPValue(testingFunc(w1[i],w2[i]))
-#             pvals.append(pval)
-#         return np.mean(pvals)
-#     cp, pvals = statisticalTesting_RecursiveBisection(sig, windowSize, pvalue, lambda x,y:_applyAvgPVal(x,y,stats.ks_2samp), return_pvalues)
-#     progress.close()
-#     return cp,pvals
 
 
 def detectChange_AvgSeries_ADWIN(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None, **kwargs)->List[int]:
