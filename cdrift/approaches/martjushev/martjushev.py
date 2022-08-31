@@ -505,7 +505,7 @@ def _my_adwin(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, 
         progress.close()
     return changepoints if not return_pvalues else (changepoints, pvals)
 
-def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, threshold:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None):
+def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, threshold:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None)-> List[int] | Tuple[List[int], List[Tuple[int, float]]]:
     """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
 
     In each step, the average of the computed pvalue over all levels of the signal is considered. This is used, e.g, to detect change points using the J-Measure for every pair of activities.
@@ -525,7 +525,7 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
         Exception: An exception is raised, if the different levels of the signal are not of the same length.
 
     Returns:
-        List[int]: A list of detected change point indices. If `return_pvalues` is True, the computed pvalues are also returned.
+        List[int] | Tuple[List[int], List[Tuple[int, float]]]: A list of detected change point indices. If `return_pvalues` is True, the computed pvalues are also returned as a list of tuples of index and computed p value at that point.
     """
 
     def calc_avg_pval(window1, window2):
@@ -555,7 +555,7 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
     population2StartIdx = population1EndIdx #Inclusive
     population2EndIdx =  population2StartIdx + min_window #Exclusive
 
-    pvals = np.ones(sig_length)
+    pvals = [(idx, 1) for idx in range(min_window)]
 
     observedDriftPoints = []
 
@@ -578,7 +578,7 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
         for i in range(curStepSize1):
             if i >= sig_length:
                 break
-            pvals[plotX + i] = sp
+            pvals.append((plotX+i, sp))
 
 
         # Drift point search
@@ -625,6 +625,8 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
             population1EndIdx = (population1StartIdx + population2EndIdx) // 2
             population2StartIdx = population1EndIdx
             stop = True
+
+    pvals += [(idx, 1) for idx in range(pvals[-1][0]+1, sig_length)]
 
 
     return observedDriftPoints if not return_pvalues else (observedDriftPoints, pvals)
