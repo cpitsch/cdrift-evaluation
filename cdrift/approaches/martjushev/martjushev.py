@@ -506,7 +506,7 @@ def _my_adwin(signals:np.ndarray, min_window:int, max_window:int, pvalue:float, 
     return changepoints if not return_pvalues else (changepoints, pvals)
 
 def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, threshold:float, step_size:int, testingFunction:Callable, return_pvalues:bool=False, show_progress_bar:bool=True, progressBarPos:int=None)-> List[int] | Tuple[List[int], List[Tuple[int, float]]]:
-    """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests.
+    """Detect change points in a signal through application of statistical tests with sliding windows. When a change is detected, the exact location is investigated through recursive applications of statistical tests. Implemented by translating ProM source code more or less "1:1"
 
     In each step, the average of the computed pvalue over all levels of the signal is considered. This is used, e.g, to detect change points using the J-Measure for every pair of activities.
 
@@ -583,7 +583,6 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
 
         # Drift point search
         if sp < threshold:
-            # int driftPoint = cah.searchStep(matrix, population1StartIdx, population2EndIdx);
             driftPoint = _locateChange(
                 np.swapaxes(signals,0,1)[population1StartIdx:population1EndIdx],
                 np.swapaxes(signals,0,1)[population2StartIdx:population2EndIdx],
