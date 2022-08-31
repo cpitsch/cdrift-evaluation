@@ -1,5 +1,5 @@
 from cdrift.approaches.bose import extractJMeasure, extractWindowCount
-from cdrift.utils.helpers import _getActivityNames, makeProgressBar
+from cdrift.utils.helpers import _getActivityNames, makeProgressBar, safe_update_bar
 
 import numpy as np
 from typing import Callable, List, Any, Tuple, Union, Iterable
