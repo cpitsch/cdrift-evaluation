@@ -515,7 +515,7 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
         min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
         max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
         threshold (float): The p-value threshold, under which a pvalue indicates a change point.
-        step_size (int): The step size for increasing the window size in ADWIN.
+        step_size (int): The step size for increasing the window size in the ADWIN Algorithm.
         testingFunction (Callable): The testing function used to compare populations.
         return_pvalues (bool, optional): Configures whether the computed pvalues should be returned. Defaults to False.
         show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
@@ -629,3 +629,90 @@ def detectChange_AvgSeries_ADWIN(signals, min_window:int, max_window:int, thresh
 
 
     return observedDriftPoints if not return_pvalues else (observedDriftPoints, pvals)
+
+def detectChange_ADWIN_JMeasure_KS(log:EventLog, min_window:int, max_window:int, pvalue:float, step_size:int, return_pvalues:bool=False, measure_window:int=None, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None)->Union[List[int], Tuple[List[int], np.ndarray]]:
+    """Apply Concept Drift Detection using the J-Measure and the Kolmogorov-Smirnov test.
+
+    Args:
+        log (EventLog): The log on which to apply the concept drift detection.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        pvalue (float): The p-value threshold for statistical testing. If the p-value of the statistical test is below this threshold, a changepoint is detected.
+        step_size (int): The step size for increasing the window size in the ADWIN Algorithm.
+        return_pvalues (bool, optional): If True, the p-values of the statistical tests are returned. Defaults to False.
+        measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
+    """
+    
+    signals = _extractAllJMeasures(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+    return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.ks_2samp, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+
+def detectChange_ADWIN_WindowCount_KS(log:EventLog, min_window:int, max_window:int, pvalue:float, step_size:int, return_pvalues:bool=False, measure_window:int=None, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None)->Union[List[int], Tuple[List[int], np.ndarray]]:
+    """Apply Concept Drift Detection using the Window Count and the Kolmogorov-Smirnov test.
+
+    Args:
+        log (EventLog): The log on which to apply the concept drift detection.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        pvalue (float): The p-value threshold for statistical testing. If the p-value of the statistical test is below this threshold, a changepoint is detected.
+        return_pvalues (bool, optional): If True, the p-values of the statistical tests are returned. Defaults to False.
+        measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
+    """
+    
+    signals = _extractAllWindowCounts(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+    return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.ks_2samp, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+
+def detectChange_ADWIN_JMeasure_MU(log:EventLog, min_window:int, max_window:int, pvalue:float, step_size:int, return_pvalues:bool=False, measure_window:int=None, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None)->Union[List[int], Tuple[List[int], np.ndarray]]:
+    """Apply Concept Drift Detection using the J-Measure and the Mann-Whitney U-Test.
+
+    Args:
+        log (EventLog): The log on which to apply the concept drift detection.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        pvalue (float): The p-value threshold for statistical testing. If the p-value of the statistical test is below this threshold, a changepoint is detected.
+        step_size (int): The step size for increasing the window size in the ADWIN Algorithm.
+        return_pvalues (bool, optional): If True, the p-values of the statistical tests are returned. Defaults to False.
+        measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
+    """    
+    
+    signals = _extractAllJMeasures(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+    return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+
+def detectChange_ADWIN_WindowCount_MU(log:EventLog, min_window:int, max_window:int, pvalue:float, step_size:int, return_pvalues:bool=False, measure_window:int=None, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None)->Union[List[int], Tuple[List[int], np.ndarray]]:
+    """Apply Concept Drift Detection using the Window Count and the Mann-Whitney U-Test.
+
+    Args:
+        log (EventLog): The log on which to apply the concept drift detection.
+        min_window (int): The minimal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        max_window (int): The maximal size of the sliding window for the statistical test using an adaptive window; i.e. the size of the compared populations.
+        pvalue (float): The p-value threshold for statistical testing. If the p-value of the statistical test is below this threshold, a changepoint is detected.
+        step_size (int): The step size for increasing the window size in the ADWIN Algorithm.
+        return_pvalues (bool, optional): If True, the p-values of the statistical tests are returned. Defaults to False.
+        measure_window (int, optional): The window size to use for the measure extraction. If `None`, defaults to average trace length in the log. Defaults to None.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Configures whether or not to show a progress bar. Defaults to True.
+        progressBarPos (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
+    """
+    
+    signals = _extractAllWindowCounts(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
+    return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
