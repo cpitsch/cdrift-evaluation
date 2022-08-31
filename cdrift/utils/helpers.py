@@ -109,6 +109,10 @@ def makeProgressBar(num_iters:int=None, message:str="", position:int=None):
 
     return  tqdm(total=num_iters, desc=f"{message} :: ", position=position, leave=True)
 
+def safe_update_bar(progress_bar, amount:int)->None:
+    if progress_bar is not None:
+        progress_bar.update(amount)
+
 def _getNumActivities(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->int:
     """A helper function to calculate the number of activities in an event log.
 
