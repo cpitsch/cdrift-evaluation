@@ -223,6 +223,11 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, s
 
 def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
+
+    if len(log) <= min_window:
+        # If the log is too short, we can't use the ADWIN algorithm because even the initial windows do not fit
+        return np.NaN
+
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
@@ -494,6 +499,10 @@ def main():
                 results.append(result)
         else:
             results = p.starmap(testSomething, arguments)
+
+    # Remove NaN return values from the results, source is Martjushev_ADWIN if the log is too short for the chosen windows
+    results = [result for result in results if not result == np.NaN]
+
     elapsed_time = math.floor(default_timer() - time_start)
     # Write instead of print because of progress bars (although it shouldnt be a problem because they are all done)
     elapsed_formatted = datetime.strftime(datetime.utcfromtimestamp(elapsed_time), '%H:%M:%S')
