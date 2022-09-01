@@ -25,7 +25,6 @@ from cdrift.utils import helpers
 
 #Misc
 import os
-from tqdm import tqdm
 from datetime import datetime
 from colorama import Fore
 from tqdm import tqdm
@@ -56,7 +55,12 @@ class Approaches(enum.Enum):
     PROCESS_GRAPHS = "ProcessGraph"
     ZHENG = "Zheng"
 
-#TODO: Make this configuration accessible through arguments
+
+#################################
+############ SETTINGS ###########
+#################################
+
+
 DO_APPROACHES = {
     Approaches.BOSE: True,
     Approaches.MARTJUSHEV: False,
@@ -66,6 +70,12 @@ DO_APPROACHES = {
     Approaches.PROCESS_GRAPHS: True,
     Approaches.ZHENG: True
 }
+
+DO_SINGLE_BAR = True
+
+DO_PARETO_FRONT = False
+
+NUM_CORES = cpu_count() - 4
 
 #################################
 ############ HELPERS ############
@@ -216,7 +226,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar progressBarPos=position)
+    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
@@ -377,34 +387,32 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
         ret.append(new_entry)
     return ret
 
-def testSomething(idx:int, vals:int, total_progress_bar=None):
+def testSomething(arg):
     """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
 
     Args:
         idx (int): Position-Index for the progress bar of the evaluation
         vals (Tuple[str,List]): Tuple of name of the approach, and its parameter values
     """
-    name, arguments = vals
-    result = None
-    do_separate_bars = total_progress_bar is None
-    if name == Approaches.BOSE:
-        result = testBose(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.MARTJUSHEV:
-        result = testMartjushev(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.MARTJUSHEV_ADWIN:
-        result = testMartjushev_ADWIN(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.EARTHMOVER:
-        result = testEarthMover(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.MAARADJI:
-        result = testMaaradji(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.PROCESS_GRAPHS:
-        result = testGraphMetrics(*arguments, position=idx, show_progress_bar = do_separate_bars)
-    elif name == Approaches.ZHENG:
-        result = testZhengDBSCAN(*arguments, position=idx, show_progress_bar = do_separate_bars)
 
-    if total_progress_bar is not None:
-        total_progress_bar.update()
-    return result
+    idx, vals, show_bar = arg
+
+    name, arguments = vals
+    if name == Approaches.BOSE:
+        return testBose(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.MARTJUSHEV:
+        return testMartjushev(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.MARTJUSHEV_ADWIN:
+        return testMartjushev_ADWIN(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.EARTHMOVER:
+        return testEarthMover(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.MAARADJI:
+        return testMaaradji(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.PROCESS_GRAPHS:
+        return testGraphMetrics(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.ZHENG:
+        return testZhengDBSCAN(*arguments, position=idx, show_progress_bar=show_bar)
+
 def main():
     #Evaluation Parameters
     F1_LAG = 200
@@ -473,22 +481,19 @@ def main():
     # Shuffle the Tasks
     np.random.shuffle(arguments)
 
-    NUM_CORES = os.cpu_count() - 4
-
     time_start = default_timer()
 
     freeze_support()  # for Windows support
     tqdm.set_lock(RLock())  # for managing output contention
-    results = None
-
-    DO_SINGLE_BAR = True
-    total_bar = None
-    if DO_SINGLE_BAR:
-        helpers.makeProgressBar(num_iters=len(arguments), message="Calculating.. Completed PCD Instances")
+    results = []
 
     with Pool(NUM_CORES,initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as p:
-        _args = [(idx, args, total_bar) for idx, args in enumerate(arguments)]
-        results = p.starmap(testSomething, enumerate(arguments))
+        _args = [(idx, args, not DO_SINGLE_BAR) for idx, args in enumerate(arguments)]
+        if DO_SINGLE_BAR:
+            for result in tqdm(p.imap(testSomething, _args), desc="Calculating.. Completed PCD Instances", total=len(_args)):
+                results.append(result)
+        else:
+            results = p.starmap(testSomething, arguments)
     elapsed_time = math.floor(default_timer() - time_start)
     # Write instead of print because of progress bars (although it shouldnt be a problem because they are all done)
     elapsed_formatted = datetime.strftime(datetime.utcfromtimestamp(elapsed_time), '%H:%M:%S')
@@ -499,7 +504,6 @@ def main():
     df = pd.DataFrame(flattened_results)
     df.to_csv("evaluation_results.csv", index=False)
 
-    DO_PARETO_FRONT = False
     if DO_PARETO_FRONT:
         # Convert String Duration Column to Datetime
         from cdrift.utils.helpers import convertToTimedelta
