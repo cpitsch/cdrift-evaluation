@@ -50,6 +50,7 @@ class color:
 class Approaches(enum.Enum):
     BOSE = "Bose"
     MARTJUSHEV = "Martjushev"
+    MARTJUSHEV_ADWIN = "Martjushev ADWIN"
     EARTHMOVER = "Earthmover"
     MAARADJI = "Maaradji"
     PROCESS_GRAPHS = "ProcessGraph"
@@ -58,7 +59,8 @@ class Approaches(enum.Enum):
 #TODO: Make this configuration accessible through arguments
 DO_APPROACHES = {
     Approaches.BOSE: True,
-    Approaches.MARTJUSHEV: True,
+    Approaches.MARTJUSHEV: False,
+    Approaches.MARTJUSHEV_ADWIN: True,
     Approaches.EARTHMOVER: True,
     Approaches.MAARADJI: True,
     Approaches.PROCESS_GRAPHS: True,
@@ -209,6 +211,50 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
 
     return [new_entry_j, new_entry_wc]
 
+def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None):
+    log = helpers.importLog(filepath, verbose=False)
+    logname = filepath.split('/')[-1].split('.')[0]
+
+    j_start = default_timer()
+    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, progressBarPos=position)
+    j_dur = default_timer() - j_start
+
+    wc_start = default_timer()
+    adwin_wc_cp, adwin_wc_pvals = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, progressBarPos=position)
+    wc_dur = default_timer() - wc_start
+    
+    durStr_J = calcDurFromSeconds(j_dur)
+    durStr_WC = calcDurFromSeconds(wc_dur)
+
+    new_entry_j = {
+        'Algorithm':"Martjushev ADWIN J", 
+        'Log Source': Path(filepath).parent.name,
+        'Log': logname,
+        'P-Value': pvalue,
+        'Min Adaptive Window': min_window,
+        'Max Adaptive Window': max_window,
+        'Detected Changepoints': adwin_j_cp,
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(detected=adwin_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
+        'Duration': durStr_J
+    }
+    new_entry_wc = {
+        'Algorithm':"Martjushev ADWIN WC", 
+        'Log Source': Path(filepath).parent.name,
+        'Log': logname,
+        'P-Value': pvalue,
+        'Min Adaptive Window': min_window,
+        'Max Adaptive Window': max_window,
+        'Detected Changepoints': adwin_wc_cp,
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(detected=adwin_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
+        'Duration': durStr_WC
+    }
+
+    return [new_entry_j, new_entry_wc]
+
 def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
     LINE_NR = position
 
@@ -270,13 +316,13 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
     
     return [new_entry]
 
-def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, F1_LAG, cp_locations, position=None):
+def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_locations, position=None):
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=0.05, progressBarPosition=position)
+    cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=pvalue, progressBarPosition=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -345,6 +391,8 @@ def testSomething(idx:int, vals:int):
         return testBose(*arguments, position=idx)
     elif name == Approaches.MARTJUSHEV:
         return testMartjushev(*arguments, position=idx)
+    elif name == Approaches.MARTJUSHEV_ADWIN:
+        return testMartjushev_ADWIN(*arguments, position=idx)
     elif name == Approaches.EARTHMOVER:
         return testEarthMover(*arguments, position=idx)
     elif name == Approaches.MAARADJI:
@@ -382,6 +430,10 @@ def main():
     # Parameters for Adaptive Window Approaches
     min_window_sizes = [100,200,300,400]
     max_window_sizes = [400,500,600,700]
+    step_sizes = [1,10,20,30]
+    mart_pvalues = [0.4]
+    pgraph_pvalues = [0.1, 0.05, 0.0001] #0.0001 used in the paper
+
     window_pairs = [
         (w_min,w_max)
         for w_min, w_max in product(min_window_sizes, max_window_sizes)
@@ -396,20 +448,23 @@ def main():
         for mrid in mrids
     ]
 
-    bose_args         =  [(path, winSize,             F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
-    martjushev_args   =  [(path, winSize,             F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
-    em_args           =  [(path, winSize,             F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
-    maaradji_args     =  [(path, winSize,             F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes ]
-    pgraph_args       =  [(path, w_min, w_max,        F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      ]
-    zhengDBSCAN_args  =  [(path, mrid,    epsList,    F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs    ]
+
+    bose_args             =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
+    martjushev_args       =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
+    martjushev_adwin_args =  [(path, w_min, w_max, pval, step, F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in mart_pvalues   for step in step_sizes ]
+    em_args               =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
+    maaradji_args         =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes ]
+    pgraph_args           =  [(path, w_min, w_max, pval,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
+    zhengDBSCAN_args      =  [(path, mrid,    epsList,         F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs    ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
-        + ([ (Approaches.ZHENG, args)            for args in zhengDBSCAN_args ] if DO_APPROACHES[Approaches.ZHENG          ]         else [])
-        + ([ (Approaches.MAARADJI, args)         for args in maaradji_args    ] if DO_APPROACHES[Approaches.MAARADJI       ]         else [])
-        + ([ (Approaches.PROCESS_GRAPHS, args)   for args in pgraph_args      ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS ]         else [])
-        + ([ (Approaches.EARTHMOVER, args)       for args in em_args          ] if DO_APPROACHES[Approaches.EARTHMOVER     ]         else [])
-        + ([ (Approaches.BOSE, args)             for args in bose_args        ] if DO_APPROACHES[Approaches.BOSE           ]         else [])
-        + ([ (Approaches.MARTJUSHEV, args)       for args in martjushev_args  ] if DO_APPROACHES[Approaches.MARTJUSHEV     ]         else [])
+        + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
+        + ([ (Approaches.MAARADJI, args)           for args in maaradji_args            ] if DO_APPROACHES[Approaches.MAARADJI          ]         else [])
+        + ([ (Approaches.PROCESS_GRAPHS, args)     for args in pgraph_args              ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS    ]         else [])
+        + ([ (Approaches.EARTHMOVER, args)         for args in em_args                  ] if DO_APPROACHES[Approaches.EARTHMOVER        ]         else [])
+        + ([ (Approaches.BOSE, args)               for args in bose_args                ] if DO_APPROACHES[Approaches.BOSE              ]         else [])
+        + ([ (Approaches.MARTJUSHEV, args)         for args in martjushev_args          ] if DO_APPROACHES[Approaches.MARTJUSHEV        ]         else [])
+        + ([ (Approaches.MARTJUSHEV_ADWIN, args)   for args in martjushev_adwin_args    ] if DO_APPROACHES[Approaches.MARTJUSHEV_ADWIN  ]         else [])
     )
 
     # Shuffle the Tasks
