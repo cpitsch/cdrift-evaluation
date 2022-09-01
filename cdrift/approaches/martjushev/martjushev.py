@@ -2,7 +2,7 @@ from cdrift.approaches.bose import extractJMeasure, extractWindowCount
 from cdrift.utils.helpers import _getActivityNames, makeProgressBar, safe_update_bar
 
 import numpy as np
-from typing import Callable, List, Any, Tuple, Union, Iterable
+from typing import Callable, List, Any, Tuple, Union
 from numbers import Number
 import scipy.stats as stats
 from pm4py.objects.log.obj import EventLog
@@ -648,7 +648,8 @@ def detectChange_ADWIN_JMeasure_KS(log:EventLog, min_window:int, max_window:int,
     Returns:
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
     """
-    
+    if len(log) <= 2*min_window:
+        raise ValueError("The log is too short to apply the ADWIN algorithm. It must contain at more than 2*min_window traces.")
     signals = _extractAllJMeasures(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
     return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.ks_2samp, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
 
@@ -670,6 +671,8 @@ def detectChange_ADWIN_WindowCount_KS(log:EventLog, min_window:int, max_window:i
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
     """
     
+    if len(log) <= 2*min_window:
+        raise ValueError("The log is too short to apply the ADWIN algorithm. It must contain at more than 2*min_window traces.")
     signals = _extractAllWindowCounts(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
     return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.ks_2samp, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
 
@@ -692,6 +695,8 @@ def detectChange_ADWIN_JMeasure_MU(log:EventLog, min_window:int, max_window:int,
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
     """    
     
+    if len(log) <= 2*min_window:
+        raise ValueError("The log is too short to apply the ADWIN algorithm. It must contain at more than 2*min_window traces.")
     signals = _extractAllJMeasures(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
     return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
 
@@ -714,5 +719,7 @@ def detectChange_ADWIN_WindowCount_MU(log:EventLog, min_window:int, max_window:i
         Union[List[int], Tuple[List[int], np.ndarray]]: A list of detected change points. If `return_pvalues` is True, a tuple containing the list of change points and the p-values of the statistical tests.
     """
     
+    if len(log) <= 2*min_window:
+        raise ValueError("The log is too short to apply the ADWIN algorithm. It must contain at more than 2*min_window traces.")
     signals = _extractAllWindowCounts(log,measure_window,activityName_key, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
     return detectChange_AvgSeries_ADWIN(signals, min_window, max_window, pvalue, step_size, stats.mannwhitneyu, return_pvalues, show_progress_bar=show_progress_bar, progressBarPos=progressBarPos)
