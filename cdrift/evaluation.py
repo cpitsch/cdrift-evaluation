@@ -312,12 +312,16 @@ def scatter_f1_duration(dfs:List[pd.DataFrame]):
         "Bose WC": "^", # triangle_up
         "Martjushev J": "s", # square
         "Martjushev WC": "s", #square
+        "Martjushev ADWIN J": "s", # square
+        "Martjushev ADWIN WC": "s", #square
     }
     colors = {
         "Bose J": "#add8e6", # Light Blue
         "Bose WC": "#000080", # Navy Blue
         "Martjushev J": "#32cd32", # Navy Green
         "Martjushev WC": "#006400", # Dark Green
+        "Martjushev ADWIN J": "#32cd32", # Navy Green
+        "Martjushev ADWIN WC": "#006400", # Dark Green
         "ProDrift": "#ff0000", # Red
         "Earth Mover's Distance": "#ffa500", # Orange
         "Process Graphs": "#ddcd10", # Some dark, rich yellow
