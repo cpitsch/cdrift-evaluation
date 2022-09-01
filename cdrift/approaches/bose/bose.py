@@ -306,6 +306,8 @@ def _detectChangeLocal(log:EventLog, stattest:str, measure:str, windowSize:int, 
 
     activities = _getActivityNames(log,activityName_key)
     pvals = np.zeros(len(log))
+
+    progress = None
     if show_progress_bar:
         progress = makeProgressBar(num_iters=len(activities)**2, message=f"Calculating {measure} P-Values for Bose, activity pairs complete")
     for act1 in activities:
