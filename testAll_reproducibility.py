@@ -60,7 +60,7 @@ class Approaches(enum.Enum):
 ############ SETTINGS ###########
 #################################
 
-
+# Which appraoches to test
 DO_APPROACHES = {
     Approaches.BOSE: True,
     Approaches.MARTJUSHEV: False,
@@ -71,11 +71,14 @@ DO_APPROACHES = {
     Approaches.ZHENG: True
 }
 
-DO_SINGLE_BAR = True
+# Use a single bar for all (Showing how many algorithm applications are finished) or separate bars for each PCD instance
+DO_SINGLE_BAR = False
 
+# Take the results and make a pareto front from it
 DO_PARETO_FRONT = False
 
-NUM_CORES = cpu_count() - 4
+# Number of cores to use for the multiprocessing
+NUM_CORES = cpu_count() -2
 
 #################################
 ############ HELPERS ############
