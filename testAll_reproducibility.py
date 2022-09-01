@@ -72,7 +72,7 @@ DO_APPROACHES = {
 }
 
 # Use a single bar for all (Showing how many algorithm applications are finished) or separate bars for each PCD instance
-DO_SINGLE_BAR = False
+DO_SINGLE_BAR = True
 
 # Take the results and make a pareto front from it
 DO_PARETO_FRONT = False
@@ -501,7 +501,7 @@ def main():
             for result in tqdm(p.imap(testSomething, _args), desc="Calculating.. Completed PCD Instances", total=len(_args)):
                 results.append(result)
         else:
-            results = p.starmap(testSomething, arguments)
+            results = p.map(testSomething, _args)
 
     # Remove NaN return values from the results, source is Martjushev_ADWIN if the log is too short for the chosen windows
     results = [result for result in results if not result == np.NaN]
