@@ -123,7 +123,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 ##### Evaluation Functions ######
 #################################
 
-def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
+def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     j_dur = 0
     wc_dur = 0
 
@@ -131,12 +131,12 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE, progressBarPos=position)
+    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE, show_progress_bar=show_progress_bar, progressBarPos=position)
     cp_j = bose.visualInspection(pvals_j, WINDOW_SIZE)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE, progressBarPos=position)
+    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE, show_progress_bar=show_progress_bar, progressBarPos=position)
     cp_wc = bose.visualInspection(pvals_wc, WINDOW_SIZE)
     wc_dur = default_timer() - wc_start
 
@@ -168,17 +168,17 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
 
     return [new_entry_j, new_entry_wc]
 
-def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
+def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    rb_j_cp, rb_j_pvals = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, progressBarPos=position)
+    rb_j_cp, rb_j_pvals = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    rb_wc_cp, rb_wc_pvals = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, progressBarPos=position)
+    rb_wc_cp, rb_wc_pvals = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
     wc_dur = default_timer() - wc_start
     
     durStr_J = calcDurFromSeconds(j_dur)
@@ -211,16 +211,16 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None):
 
     return [new_entry_j, new_entry_wc]
 
-def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None):
+def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, progressBarPos=position)
+    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    adwin_wc_cp, adwin_wc_pvals = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, progressBarPos=position)
+    adwin_wc_cp, adwin_wc_pvals = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
     wc_dur = default_timer() - wc_start
     
     durStr_J = calcDurFromSeconds(j_dur)
@@ -255,7 +255,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
 
     return [new_entry_j, new_entry_wc]
 
-def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
+def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_progress_bar=True):
     LINE_NR = position
 
     log = helpers.importLog(filepath, verbose=False)
@@ -265,7 +265,7 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
 
     # Earth Mover's Distance
     traces = earthmover.extractTraces(log)
-    em_dists = earthmover.calculateDistSeries(traces, WINDOW_SIZE, progressBar_pos=LINE_NR)
+    em_dists = earthmover.calculateDistSeries(traces, WINDOW_SIZE, show_progressBar=show_progress_bar, progressBar_pos=LINE_NR)
 
     cp_em = earthmover.visualInspection(em_dists, WINDOW_SIZE)
 
@@ -287,15 +287,14 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
 
     return [new_entry]
 
-def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
-    LINE_NR = position
+def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_progress_bar=True):
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp_runs, chis_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=True, progressBar_pos=LINE_NR)
+    cp_runs, chis_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=True, show_progress_bar=show_progress_bar,progressBar_pos=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -316,13 +315,13 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position):
     
     return [new_entry]
 
-def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_locations, position=None):
+def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=pvalue, progressBarPosition=position)
+    cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=pvalue, show_progress_bar=show_progress_bar,progressBarPosition=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -344,7 +343,7 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_loc
 
     return [new_entry]
 
-def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position):
+def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, show_progress_bar=True):
     # candidateCPDetection is independent of eps, so we can calculate the candidates once and use them for multiple eps!
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -352,7 +351,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position):
     startTime = default_timer()
     
     # CPD #
-    cps = applyMultipleEps(log, mrid=mrid, epsList=epsList, progressPos=position)
+    cps = applyMultipleEps(log, mrid=mrid, epsList=epsList, show_progress_bar=show_progress_bar, progressPos=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -378,7 +377,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position):
         ret.append(new_entry)
     return ret
 
-def testSomething(idx:int, vals:int):
+def testSomething(idx:int, vals:int, total_progress_bar=None):
     """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
 
     Args:
@@ -386,22 +385,26 @@ def testSomething(idx:int, vals:int):
         vals (Tuple[str,List]): Tuple of name of the approach, and its parameter values
     """
     name, arguments = vals
-
+    result = None
+    do_separate_bars = total_progress_bar is None
     if name == Approaches.BOSE:
-        return testBose(*arguments, position=idx)
+        result = testBose(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.MARTJUSHEV:
-        return testMartjushev(*arguments, position=idx)
+        result = testMartjushev(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.MARTJUSHEV_ADWIN:
-        return testMartjushev_ADWIN(*arguments, position=idx)
+        result = testMartjushev_ADWIN(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.EARTHMOVER:
-        return testEarthMover(*arguments, position=idx)
+        result = testEarthMover(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.MAARADJI:
-        return testMaaradji(*arguments, position=idx)
+        result = testMaaradji(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.PROCESS_GRAPHS:
-        return testGraphMetrics(*arguments, position=idx)
+        result = testGraphMetrics(*arguments, position=idx, show_progress_bar = do_separate_bars)
     elif name == Approaches.ZHENG:
-        return testZhengDBSCAN(*arguments, position=idx)
+        result = testZhengDBSCAN(*arguments, position=idx, show_progress_bar = do_separate_bars)
 
+    if total_progress_bar is not None:
+        total_progress_bar.update()
+    return result
 def main():
     #Evaluation Parameters
     F1_LAG = 200
@@ -477,7 +480,14 @@ def main():
     freeze_support()  # for Windows support
     tqdm.set_lock(RLock())  # for managing output contention
     results = None
+
+    DO_SINGLE_BAR = True
+    total_bar = None
+    if DO_SINGLE_BAR:
+        helpers.makeProgressBar(num_iters=len(arguments), message="Calculating.. Completed PCD Instances")
+
     with Pool(NUM_CORES,initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as p:
+        _args = [(idx, args, total_bar) for idx, args in enumerate(arguments)]
         results = p.starmap(testSomething, enumerate(arguments))
     elapsed_time = math.floor(default_timer() - time_start)
     # Write instead of print because of progress bars (although it shouldnt be a problem because they are all done)
