@@ -329,12 +329,16 @@ def scatter_f1_duration(dfs:List[pd.DataFrame]):
         # The rest is just whatever it wants to give them
     }
 
+    handled_dfs = []
     for df in dfs:
         # Turn Duration column into minutes
-        df["Duration"] = df["Duration"].apply(lambda x: x.seconds/60)
-        df.rename(columns={"Duration": "Duration (Minutes)"}, inplace=True)
+        df_copy = df.copy(deep=True)
+        df_copy["Duration"] = df_copy["Duration"].apply(lambda x: x.seconds/60)
+        handled_dfs.append(
+            df_copy.rename(columns={"Duration": "Duration (Minutes)"}, inplace=False)
+        )
 
-    fig = scatter_pareto_front(dfs,  x="Duration (Minutes)", y="F1-Score", figsize=(8,5), lower_is_better_dimensions = ["Duration (Minutes)"], colors=colors, markers=markers)
+    fig = scatter_pareto_front(handled_dfs,  x="Duration (Minutes)", y="F1-Score", figsize=(8,5), lower_is_better_dimensions = ["Duration (Minutes)"], colors=colors, markers=markers)
     plt.ylim(-0.02, 1)
     return fig
 
