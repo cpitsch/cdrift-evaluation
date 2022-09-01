@@ -4,6 +4,7 @@ import pm4py.util.xes_constants as xes
 from sklearn.cluster import DBSCAN
 import numpy as np
 from numpy.typing import NDArray
+from cdrift.utils.helpers import safe_update_bar
 
 from cdrift.utils.helpers import makeProgressBar, _getActivityNames
 
@@ -44,8 +45,7 @@ def calcRelationMatrix(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY, 
             for act in seen:
                 wrelmatrix[act*num_activities + act1_index,idx]
             seen.add(act1_index)
-        if progress is not None:
-            progress.update() # Completed  trace
+        safe_update_bar(progress)
     return np.append(drelmatrix,wrelmatrix,axis=0)
 
 def candidateCPDetection(relMatrixRow:NDArray, mrid:int)->Set[int]:
@@ -136,7 +136,7 @@ def candidateChangepointsCombinataion(S:Set[int], mrid:int, eps:float, n:int)->L
             raise Exception("Couldn't find a place in results list for changepoint. This should not happen, contact the developer")
     return result
 
-def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NAME_KEY, progressPos:int=None)->List[float]:
+def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressPos:int=None)->List[float]:
     """Apply concept drift detection using the algorithm of Zheng et al.
 
     Args:
@@ -144,20 +144,27 @@ def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NA
         mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
         eps (float): The epsilon parameter used for the DBSCAN clustering algorithm.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Whether to show a progress bar. Defaults to True.
         progressPos (int, optional): The `pos` parameter for tqdm progress bars. In which line to print the progress bar. Defaults to None.
 
     Returns:
         List[float]: A list of change point indices. These are floats due to the use of a clustering algorithm.
     """
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(len(log),"Extracting Relation Matrix for (Zheng)", position=progressPos)
 
-    progress = makeProgressBar(len(log),"Extracting Relation Matrix for (Zheng)", position=progressPos)
     d = calcRelationMatrix(log, activityName_key=activityName_key, progress=progress)
-    progress.set_description("Finding Changepoint Candidated (Zheng)")
-    _resetPBar_PreserveTime(progress, newTotal=d.shape[0]) # 1 update per row
+
+    if progress is not None:
+        progress.set_description("Finding Changepoint Candidated (Zheng)")
+        _resetPBar_PreserveTime(progress, newTotal=d.shape[0]) # 1 update per row
+
     P = set()
     for row in d:
         P.update(candidateCPDetection(row, mrid=mrid))
         progress.update()
+
     cp = candidateChangepointsCombinataion(P, mrid=mrid, eps=eps, n=len(log))
     # Zheng has convention to have first and last index as changepoints, but we don't:
     cp.remove(1)
@@ -165,7 +172,7 @@ def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NA
     progress.close()
     return cp
 
-def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_key:str=xes.DEFAULT_NAME_KEY, progressPos:int=None):
+def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressPos:int=None):
     """Apply concept drift detection using the algorithm of Zheng et al. for multiple different epsilon values for DBSCAN.
 
     Args:
@@ -173,28 +180,31 @@ def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_k
         mrid (int): The Minimum Relation Invariance Distance. How long a relationship must remain stable before its change is concidered a change point candidate.
         epsList (List[float]): A list of epsilon parameters used for the DBSCAN clustering algorithm.
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Whether to show a progress bar. Defaults to True.
         progressPos (int, optional): The `pos` parameter for tqdm progress bars. In which line to print the progress bar. Defaults to None.
 
     Returns:
         Dict[float, List[float]]: A dictionary mapping an epsilon parameter to the list of detected change point indices using this epsilon. The change points are floats due to the use of a clustering algorithm.
     """
-
-    progress = makeProgressBar(len(log), "Extracting Relation Matrix for (Zheng)", position=progressPos)
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(len(log), "Extracting Relation Matrix for (Zheng)", position=progressPos)
     d = calcRelationMatrix(log, activityName_key=activityName_key, progress=progress)
 
-
-    progress.set_description("Finding Changepoint Candidates (Zheng)")
-    _resetPBar_PreserveTime(progress, newTotal=d.shape[0]) # 1 update per row
-    # progress.reset(total=d.shape[0]) # 1 update per row
+    if progress is not None:
+        progress.set_description("Finding Changepoint Candidates (Zheng)")
+        _resetPBar_PreserveTime(progress, newTotal=d.shape[0]) # 1 update per row
+        # progress.reset(total=d.shape[0]) # 1 update per row
     P = set()
     for row in d:
         P.update(candidateCPDetection(row, mrid=mrid))
-        progress.update()
+        safe_update_bar(progress)
+    if progress is not None:
+        progress.set_description("Combining changepoint candidates for different Epsilons (Zheng)")
 
-    progress.set_description("Combining changepoint candidates for different Epsilons (Zheng)")
+        _resetPBar_PreserveTime(progress, newTotal=len(epsList)) # 1 update per row
+        # progress.reset(total=len(epsList)) # 1 update per row
 
-    _resetPBar_PreserveTime(progress, newTotal=len(epsList)) # 1 update per row
-    # progress.reset(total=len(epsList)) # 1 update per row
     cps:Dict[float: List[int]] = dict() # Maps an epsilon to the changepoints found for it
     for eps in epsList:
         cp = candidateChangepointsCombinataion(P, mrid=mrid, eps=eps, n=len(log))
@@ -202,7 +212,7 @@ def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_k
         cp.remove(1)
         cp.remove(len(log))
         cps[eps] = cp
-        progress.update()
+        safe_update_bar(progress)
     progress.close()
     return cps
 
