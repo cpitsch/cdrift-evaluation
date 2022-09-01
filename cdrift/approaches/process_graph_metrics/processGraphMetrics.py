@@ -11,7 +11,7 @@ from scipy.stats import power_divergence
 
 from cdrift.utils.helpers import _getActivityNames, makeProgressBar
 
-def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=0.0001, activityName_key: str = xes.DEFAULT_NAME_KEY, progressBarPosition:int=None)->List[int]:
+def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=0.0001, activityName_key: str = xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPosition:int=None)->List[int]:
     """Apply concept drift detection using the Process Graph Metrics by Seeliger et al.
 
     Args:
@@ -20,6 +20,7 @@ def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=
         maxWindowSize (int): The maximal size to grow the window to  before it is reset.
         pvalue (float, optional): The p-value threshold. A pvalue below this indicates a change point. Defaults to 0.0001 (The recommended value by the paper authors).
         activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        show_progress_bar (bool, optional): Whether to show a progress bar. Defaults to True.
         progressBarPosition (int, optional): The `pos` parameter for tqdm progress bars. The "line" in which to show the bar. Defaults to None.
 
     Returns:
@@ -32,7 +33,9 @@ def detectChange(log: EventLog, windowSize:int, maxWindowSize:int, pvalue:float=
     pval2beforeN = 2 # Initialized greater than 1, so any found one is "better" so pval2before-1=1 which is not less than -0.5 (worst case)
     changepoints = []
 
-    progress = makeProgressBar(len(log)-windowSize, "comparing heuristic miner graphs ", position=progressBarPosition)
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(len(log)-windowSize, "comparing heuristic miner graphs ", position=progressBarPosition)
 
     while i < len(log)-windowSize:
         pvalE = _testEdgeOccurences(log[i:i+windowSize], log[i+windowSize: i+2*windowSize], activities=activities)
@@ -189,30 +192,32 @@ def safeUpdateBar(bar, n):
     Args:
         bar (Any): The tqdm progress bar.
         n (int): The new total goal amount of the progress bar.
-    """    
-    fdict = bar.format_dict
-    bar_n = fdict['n']
-    bar_total = fdict['total']
-    if(bar_n + n > bar_total):
-        # Increase total so it fits
-        bar.total = bar_n + n
-    # Now we can definitely update without problems
-    bar.update(n=n)
+    """
+    if bar is not None:
+        fdict = bar.format_dict
+        bar_n = fdict['n']
+        bar_total = fdict['total']
+        if(bar_n + n > bar_total):
+            # Increase total so it fits
+            bar.total = bar_n + n
+        # Now we can definitely update without problems
+        bar.update(n=n)
 
 def safeClose(bar):
     """A helper function used to close a progress bar. If its goal total has not been reached yet, its total is set to the achieved amount before closing.
 
     Args:
         bar (Any): The progress bar.
-    """    
-    fdict = bar.format_dict
-    n = fdict['n']
-    total = fdict['total']
+    """ 
+    if bar is not None:  
+        fdict = bar.format_dict
+        n = fdict['n']
+        total = fdict['total']
 
-    if n != total:
-        bar.total = n
-        bar.refresh()
-    bar.close()
+        if n != total:
+            bar.total = n
+            bar.refresh()
+        bar.close()
 
 def calcM_Star_Total(log1:EventLog, log2:EventLog, activities:List[str])->np.ndarray:
     """Calculate the M* Matrix as defined in the paper.

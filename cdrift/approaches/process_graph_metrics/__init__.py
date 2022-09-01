@@ -1,1 +1,1 @@
-from cdrift.approaches.process_graph_metrics.processGraphMetrics import *
+from cdrift.approaches.process_graph_metrics.processGraphMetrics import detectChange
