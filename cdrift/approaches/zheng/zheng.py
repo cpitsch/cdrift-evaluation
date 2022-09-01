@@ -169,7 +169,8 @@ def apply(log:EventLog, mrid:int, eps:float, activityName_key:str=xes.DEFAULT_NA
     # Zheng has convention to have first and last index as changepoints, but we don't:
     cp.remove(1)
     cp.remove(len(log))
-    progress.close()
+    if progress is not None:
+        progress.close()
     return cp
 
 def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressPos:int=None):
@@ -213,7 +214,8 @@ def applyMultipleEps(log:EventLog, mrid:int, epsList:List[float], activityName_k
         cp.remove(len(log))
         cps[eps] = cp
         safe_update_bar(progress)
-    progress.close()
+    if progress is not None:
+        progress.close()
     return cps
 
 

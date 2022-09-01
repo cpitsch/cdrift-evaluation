@@ -14,7 +14,7 @@ import pm4py.util.xes_constants as xes
 import numpy
 import scipy.stats as stats
 
-from cdrift.utils.helpers import transitiveReduction, makeProgressBar
+from cdrift.utils.helpers import transitiveReduction, makeProgressBar, safe_update_bar
 
 
 def extractTraces(log:EventLog, activityName_key:str=xes.DEFAULT_NAME_KEY)->List[Tuple[str, ...]]:
@@ -301,7 +301,7 @@ def detectChangepointsAdaptive(log:EventLog, windowSize:int, pvalue:float=0.05, 
     return changepoints if not return_pvalues else (changepoints, chis)
 
 
-def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
+def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, show_progress_bar:bool=True, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
     """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection. Here, for the runs calculation, we consider the alpha relations observed in the entire event log (Event relations from the "Future")
 
     Args:
@@ -323,7 +323,10 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
     concurrents = {
         (x,y) for x,y in dfs if (y,x) in dfs
     }
-    progress = makeProgressBar(len(log), "Calculating runs ", position=progressBar_pos)
+
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(len(log), "Calculating runs ", position=progressBar_pos)
     #Calculate sequence of runs
     runs = []
     trace_to_run = {}
@@ -335,7 +338,7 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
             run = _caseToRun(case, concurrents,activityName_key=activityName_key)
             runs.append(run)
             trace_to_run[trace] = run
-        progress.update()
+        safe_update_bar(progress)
     # Iterate over runs and compute p-values
     for i in range(len(log)-(2*windowSize)):
         runs1 = runs[i:i + windowSize]
@@ -358,7 +361,8 @@ def detectChangepoints(log:EventLog, windowSize:int, pvalue=0.05, activityName_k
         
         if consecutive_chis == phi: # Enough Consecutive pvalues below threshold
             changepoints.append(index)
-    progress.close()
+    if progress is not None:
+        progress.close()
     return changepoints if not return_pvalues else (changepoints, chis)
 
 def chi_square(runs1:List[FrozenSet[Tuple[str,str]]],runs2:List[FrozenSet[Tuple[str,str]]])->float:
