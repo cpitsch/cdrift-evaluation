@@ -184,11 +184,11 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, s
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    rb_j_cp, rb_j_pvals = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
+    rb_j_cp = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    rb_wc_cp, rb_wc_pvals = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
+    rb_wc_cp = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     wc_dur = default_timer() - wc_start
     
     durStr_J = calcDurFromSeconds(j_dur)
@@ -226,11 +226,11 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    adwin_j_cp, adwin_j_pvals = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
+    adwin_j_cp = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    adwin_wc_cp, adwin_wc_pvals = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=True, show_progress_bar=show_progress_bar, progressBarPos=position)
+    adwin_wc_cp = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     wc_dur = default_timer() - wc_start
     
     durStr_J = calcDurFromSeconds(j_dur)
@@ -304,7 +304,7 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_pro
 
     startTime = default_timer()
 
-    cp_runs, chis_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=True, show_progress_bar=show_progress_bar,progressBar_pos=position)
+    cp_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar,progressBar_pos=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
