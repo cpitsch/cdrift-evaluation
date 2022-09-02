@@ -433,6 +433,8 @@ def main():
     ceravolo_root = Path("EvaluationLogs","Ceravolo")
     for item in ceravolo_root.iterdir():
         _, _, _,num_cases, _ = item.stem.split("_")
+        if int(num_cases) != 1000: # Only use logs of length 1000
+            continue
         drift_indices = [(int(num_cases)//2) - 1] # "The first half of the stream is composed of the baseline model, and the second half is composed of the drifted model"
         logPaths_Changepoints.append((item.as_posix(), drift_indices))
     
@@ -443,25 +445,26 @@ def main():
 
     # Parameter Settings #
     # Window Sizes that we test
-    windowSizes       = [100, 200, 300, 400, 500,  600, 700, 800]
+    windowSizes       = [100, 200, 300, 400, 500,  600]
     maaradji_winsizes = [50, 100, 150, 200, 250, 300            ]
     
     # Parameters for Adaptive Window Approaches
     min_window_sizes = [100,200,300,400]
     max_window_sizes = [400,500,600,700]
-    step_sizes = [1,10,20,30]
-    mart_pvalues = [0.4]
-    pgraph_pvalues = [0.1, 0.05, 0.0001] #0.0001 used in the paper
-
     window_pairs = [
         (w_min,w_max)
         for w_min, w_max in product(min_window_sizes, max_window_sizes)
         if w_min <= w_max
     ]
 
+    step_sizes = [10,20,50]
+    mart_pvalues = [0.4]
+    pgraph_pvalues = [0.1, 0.05, 0.005, 0.0001] #0.0001 used in the paper
+
+
     # Special Parameters for the approach by Zheng et al.
-    mrids = [200, 300, 400, 500, 600, 700, 800, 900]
-    eps_modifiers = [0.1,0.2,0.3, 0.4, 0.5] # use x * mrid as epsilon, as the paper suggests
+    mrids = [300, 400, 500, 600, 700, 800]
+    eps_modifiers = [0.1, 0.2, 0.3, 0.4, 0.5] # use x * mrid as epsilon, as the paper suggests
     eps_mrid_pairs = [
         (mrid,[mEps*mrid  for mEps in eps_modifiers]) 
         for mrid in mrids
