@@ -63,7 +63,7 @@ class Approaches(enum.Enum):
 # Which appraoches to test
 DO_APPROACHES = {
     Approaches.BOSE: True,
-    Approaches.MARTJUSHEV: False,
+    Approaches.MARTJUSHEV: False, # Replaced by ADWIN
     Approaches.MARTJUSHEV_ADWIN: True,
     Approaches.EARTHMOVER: True,
     Approaches.MAARADJI: True,
@@ -136,7 +136,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 ##### Evaluation Functions ######
 #################################
 
-def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testBose(filepath, window_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     j_dur = 0
     wc_dur = 0
 
@@ -144,13 +144,13 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_pr
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    pvals_j = bose.detectChange_JMeasure_KS(log, WINDOW_SIZE, show_progress_bar=show_progress_bar, progressBarPos=position)
-    cp_j = bose.visualInspection(pvals_j, WINDOW_SIZE)
+    pvals_j = bose.detectChange_JMeasure_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    cp_j = bose.visualInspection(pvals_j, window_size)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    pvals_wc = bose.detectChange_WC_KS(log, WINDOW_SIZE, show_progress_bar=show_progress_bar, progressBarPos=position)
-    cp_wc = bose.visualInspection(pvals_wc, WINDOW_SIZE)
+    pvals_wc = bose.detectChange_WC_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    cp_wc = bose.visualInspection(pvals_wc, window_size)
     wc_dur = default_timer() - wc_start
 
     durStr_J = calcDurFromSeconds(j_dur)
@@ -160,7 +160,7 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_pr
         'Algorithm':"Bose J",
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': cp_j,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -171,7 +171,7 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_pr
         'Algorithm':"Bose WC", 
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': cp_wc,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -179,19 +179,22 @@ def testBose(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_pr
         'Duration': durStr_WC
     }
 
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry_j, new_entry_wc]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.BOSE.value,f"{logname}_WIN{window_size}.csv"), index=False)
+
     return [new_entry_j, new_entry_wc]
 
-def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    rb_j_cp = martjushev.detectChange_JMeasure_KS(log, WINDOW_SIZE, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
+    rb_j_cp = martjushev.detectChange_JMeasure_KS(log, window_size, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    rb_wc_cp = martjushev.detectChange_WindowCount_KS(log, WINDOW_SIZE, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
+    rb_wc_cp = martjushev.detectChange_WindowCount_KS(log, window_size, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
     wc_dur = default_timer() - wc_start
     
     durStr_J = calcDurFromSeconds(j_dur)
@@ -202,7 +205,7 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, s
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'P-Value': PVAL,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': rb_j_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -214,14 +217,15 @@ def testMartjushev(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position=None, s
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'P-Value': PVAL,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': rb_wc_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
     }
-
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry_j, new_entry_wc]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV.value, f"{logname}_WIN{window_size}.csv"), index=False)
     return [new_entry_j, new_entry_wc]
 
 def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
@@ -270,10 +274,12 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr_WC
     }
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry_j, new_entry_wc]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV_ADWIN.value, f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
 
     return [new_entry_j, new_entry_wc]
 
-def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testEarthMover(filepath, window_size, F1_LAG, cp_locations, position, show_progress_bar=True):
     LINE_NR = position
 
     log = helpers.importLog(filepath, verbose=False)
@@ -283,9 +289,9 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_p
 
     # Earth Mover's Distance
     traces = earthmover.extractTraces(log)
-    em_dists = earthmover.calculateDistSeries(traces, WINDOW_SIZE, show_progressBar=show_progress_bar, progressBar_pos=LINE_NR)
+    em_dists = earthmover.calculateDistSeries(traces, window_size, show_progressBar=show_progress_bar, progressBar_pos=LINE_NR)
 
-    cp_em = earthmover.visualInspection(em_dists, WINDOW_SIZE)
+    cp_em = earthmover.visualInspection(em_dists, window_size)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -295,7 +301,7 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_p
         'Algorithm':"Earth Mover's Distance", 
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -303,16 +309,19 @@ def testEarthMover(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_p
         'Duration': durStr
     }
 
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.EARTHMOVER.value, f"{logname}_WIN{window_size}.csv"), index=False)
+
     return [new_entry]
 
-def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testMaaradji(filepath, window_size, F1_LAG, cp_locations, position, show_progress_bar=True):
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp_runs = runs.detectChangepoints(log,WINDOW_SIZE, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar,progressBar_pos=position)
+    cp_runs = runs.detectChangepoints(log,window_size, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar,progressBar_pos=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -323,7 +332,7 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_pro
         'Algorithm':"Maaradji Runs",
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
-        'Window Size': WINDOW_SIZE,
+        'Window Size': window_size,
         'Detected Changepoints': cp_runs,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -331,15 +340,17 @@ def testMaaradji(filepath, WINDOW_SIZE, F1_LAG, cp_locations, position, show_pro
         'Duration': durStr
     }
     
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MAARADJI.value, f"{logname}_WIN{window_size}.csv"), index=False)
     return [new_entry]
 
-def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp = pm.detectChange(log, WINDOW_SIZE, ADAP_MAX_WIN, pvalue=pvalue, show_progress_bar=show_progress_bar,progressBarPosition=position)
+    cp = pm.detectChange(log, min_window, max_window, pvalue=pvalue, show_progress_bar=show_progress_bar,progressBarPosition=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -350,8 +361,8 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_loc
         'Algorithm':"Process Graph Metrics", 
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
-        'Min Adaptive Window': WINDOW_SIZE,
-        'Max Adaptive Window': ADAP_MAX_WIN,
+        'Min Adaptive Window': min_window,
+        'Max Adaptive Window': max_window,
         'Detected Changepoints': cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -359,6 +370,8 @@ def testGraphMetrics(filepath, WINDOW_SIZE, ADAP_MAX_WIN, pvalue, F1_LAG, cp_loc
         'Duration': durStr
     }
 
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.PROCESS_GRAPHS.value, f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
     return [new_entry]
 
 def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, show_progress_bar=True):
@@ -393,6 +406,9 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
             'Duration': durStr
         }
         ret.append(new_entry)
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        for entry in ret:
+            pd.DataFrame([entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.ZHENG.value, f"{logname}_MRID{mrid}_EPS{str(entry['Epsilon']).replace('.','_')}.csv"), index=False)
     return ret
 
 def testSomething(arg):
@@ -424,6 +440,10 @@ def testSomething(arg):
 def main():
     #Evaluation Parameters
     F1_LAG = 200
+
+    for approach, do in DO_APPROACHES.items():
+        if do:
+            Path("Reproducibility_Intermediate_Results", approach.value).mkdir(parents=True, exist_ok=True)
 
     # Setup all Paths to logs alongside their change point locations
     logPaths_Changepoints = [
