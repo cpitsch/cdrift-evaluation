@@ -31,20 +31,6 @@ from tqdm import tqdm
 from pathlib import Path
 from itertools import product
 
-# From https://stackoverflow.com/a/17303428
-class color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
-   MAGENTA = '\033[35m'
-
 # Enum of approaches
 class Approaches(enum.Enum):
     BOSE = "Bose"
