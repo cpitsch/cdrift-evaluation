@@ -64,7 +64,7 @@ DO_SINGLE_BAR = True
 DO_PARETO_FRONT = False
 
 # Number of cores to use for the multiprocessing
-NUM_CORES = cpu_count() -2
+NUM_CORES = cpu_count() - 2
 
 #################################
 ############ HELPERS ############
@@ -122,7 +122,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 ##### Evaluation Functions ######
 #################################
 
-def testBose(filepath, window_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     j_dur = 0
     wc_dur = 0
 
@@ -130,13 +130,17 @@ def testBose(filepath, window_size, F1_LAG, cp_locations, position=None, show_pr
     logname = filepath.split('/')[-1].split('.')[0]
 
     j_start = default_timer()
-    pvals_j = bose.detectChange_JMeasure_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
-    cp_j = bose.visualInspection(pvals_j, window_size)
+    # pvals_j = bose.detectChange_JMeasure_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    # cp_j = bose.visualInspection(pvals_j, window_size)
+    pvals_j = bose.detectChange_JMeasure_KS_Step(log, window_size, step_size=step_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    cp_j = bose.visualInspection_Step(pvals_j, window_size, step_size)
     j_dur = default_timer() - j_start
 
     wc_start = default_timer()
-    pvals_wc = bose.detectChange_WC_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
-    cp_wc = bose.visualInspection(pvals_wc, window_size)
+    # pvals_wc = bose.detectChange_WC_KS(log, window_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    # cp_wc = bose.visualInspection(pvals_wc, window_size)
+    pvals_wc = bose.detectChange_WC_KS_Step(log, window_size, step_size=step_size, show_progress_bar=show_progress_bar, progressBarPos=position)
+    cp_wc = bose.visualInspection_Step(pvals_wc, window_size, step_size)
     wc_dur = default_timer() - wc_start
 
     durStr_J = calcDurFromSeconds(j_dur)
@@ -147,6 +151,7 @@ def testBose(filepath, window_size, F1_LAG, cp_locations, position=None, show_pr
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': window_size,
+        'SW Step Size': step_size,
         'Detected Changepoints': cp_j,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -157,6 +162,7 @@ def testBose(filepath, window_size, F1_LAG, cp_locations, position=None, show_pr
         'Algorithm':"Bose WC", 
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
+        'SW Step Size': step_size,
         'Window Size': window_size,
         'Detected Changepoints': cp_wc,
         'Actual Changepoints for Log': cp_locations,
@@ -265,7 +271,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
 
     return [new_entry_j, new_entry_wc]
 
-def testEarthMover(filepath, window_size, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testEarthMover(filepath, window_size, step_size, F1_LAG, cp_locations, position, show_progress_bar=True):
     LINE_NR = position
 
     log = helpers.importLog(filepath, verbose=False)
@@ -275,9 +281,11 @@ def testEarthMover(filepath, window_size, F1_LAG, cp_locations, position, show_p
 
     # Earth Mover's Distance
     traces = earthmover.extractTraces(log)
-    em_dists = earthmover.calculateDistSeries(traces, window_size, show_progressBar=show_progress_bar, progressBar_pos=LINE_NR)
+    # em_dists = earthmover.calculateDistSeries(traces, window_size, show_progressBar=show_progress_bar, progressBar_pos=LINE_NR)
 
-    cp_em = earthmover.visualInspection(em_dists, window_size)
+    # cp_em = earthmover.visualInspection(em_dists, window_size)
+
+    cp_em = earthmover.detect_change(log, window_size, step_size, show_progress_bar=show_progress_bar, progress_bar_pos=LINE_NR)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -288,6 +296,7 @@ def testEarthMover(filepath, window_size, F1_LAG, cp_locations, position, show_p
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': window_size,
+        'SW Step Size': step_size,
         'Detected Changepoints': cp_em,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -300,14 +309,15 @@ def testEarthMover(filepath, window_size, F1_LAG, cp_locations, position, show_p
 
     return [new_entry]
 
-def testMaaradji(filepath, window_size, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, position, show_progress_bar=True):
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     startTime = default_timer()
 
-    cp_runs = runs.detectChangepoints(log,window_size, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar,progressBar_pos=position)
+    # cp_runs = runs.detectChangepoints(log,window_size, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar,progressBar_pos=position)
+    cp_runs = runs.detectChangepoints_Stride(log, window_size, step_size, pvalue=0.05, return_pvalues=False, show_progress_bar=show_progress_bar, progressBar_pos=position)
 
     endTime = default_timer()
     durStr = calcDurationString(startTime, endTime)
@@ -476,12 +486,13 @@ def main():
         for mrid in mrids
     ]
 
+    SW_STEP_SIZES = [2]
 
-    bose_args             =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
+    bose_args             =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES]
     martjushev_args       =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
     martjushev_adwin_args =  [(path, w_min, w_max, pval, step, F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in mart_pvalues   for step in step_sizes ]
-    em_args               =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
-    maaradji_args         =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes ]
+    em_args               =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES]
+    maaradji_args         =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes for step_size in SW_STEP_SIZES]
     pgraph_args           =  [(path, w_min, w_max, pval,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
     zhengDBSCAN_args      =  [(path, mrid,    epsList,         F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs    ]
 

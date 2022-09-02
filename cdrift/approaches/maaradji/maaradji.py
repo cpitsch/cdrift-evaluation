@@ -482,3 +482,174 @@ def detectChangepoints_DynamicAlpha(log:EventLog, windowSize:int, pvalue=0.05, a
             changepoints.append(index)
     progress.close()
     return changepoints if not return_pvalues else (changepoints, chis)
+
+
+def detectChangepoints_Stride(log:EventLog, windowSize:int, step_size:int=1, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, show_progress_bar:bool=True, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection. Here, for the runs calculation, we consider the alpha relations observed in the entire event log (Event relations from the "Future")
+
+    Args:
+        log (EventLog): The event log.
+        windowSize (int): The window size for the sliding window algorithm.
+        step_size (int, optional): The step size for the sliding window algorithm; How far to move the windows after each iteration. Defaults to 1.
+        pvalue (float, optional): P-Value threshold for a pvalue to signify a change point. Defaults to 0.05. Defaults to 0.05.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        return_pvalues (bool, optional): Configures whether the computed p-values should be returned as well. Defaults to False.
+        progressBar_pos (Optional[int], optional): The `pos` argument of tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], NDArray]]: A list of the detected change point indices. If selected, also a numpy array of the calculated p-values
+    """  
+    
+    chis = []
+    dfs = set([
+        (case[i][activityName_key], case[i+1][activityName_key]) for case in log for i in range(len(case)-1)
+    ])
+    concurrents = {
+        (x,y) for x,y in dfs if (y,x) in dfs
+    }
+
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(len(log), "Calculating runs ", position=progressBar_pos)
+    #Calculate sequence of runs
+    runs = []
+    trace_to_run = {}
+    for case in log:
+        trace = tuple(x[activityName_key] for x in case)
+        if trace in trace_to_run.keys():
+            runs.append(trace_to_run[trace])
+        else:
+            run = _caseToRun(case, concurrents,activityName_key=activityName_key)
+            runs.append(run)
+            trace_to_run[trace] = run
+        safe_update_bar(progress)
+
+    # Iterate over runs and compute p-values
+    if progress is not None:
+        progress.reset()
+        progress.set_description("Calculating P-Values")
+
+    i = 0
+    while i < len(log)-(2*windowSize):
+        runs1 = runs[i:i + windowSize]
+        runs2 = runs[i+windowSize:i + (2*windowSize)]
+
+        chi = chi_square(runs1, runs2)
+        chis.append(chi)
+        i += step_size
+        if progress is not None:
+            progress.update(min(progress.total-progress.n, step_size))
+
+    # Find change points using the pvalues
+
+    # The number of consecutive points with chi-square result lower than alpha to be classified as a Changepoint 
+    # In the paper windowSize/3 was said to be best; We will use this
+    changepoints = []
+    phi = windowSize//3 #Integer division; Floor the value
+    consecutive_chis = 0
+    for index, val in enumerate(chis):
+        if val < pvalue:
+            consecutive_chis += 1
+        else:
+            consecutive_chis = 0
+        
+        if consecutive_chis == phi: # Enough Consecutive pvalues below threshold
+            changepoints.append(index)
+    if progress is not None:
+        progress.close()
+
+    # Correct changepoints (they are wrong because of initial `windowSize` indices get no value, and stride parameter)
+    changepoints = [x*step_size + windowSize for x in changepoints]
+    return changepoints if not return_pvalues else (changepoints, chis)
+
+def detectChangepoints_DynamicAlpha_Stride(log:EventLog, windowSize:int, step_size:int=1, pvalue=0.05, activityName_key:str=xes.DEFAULT_NAME_KEY, return_pvalues:bool=False, progressBar_pos:Optional[int]=None)->Union[List[int], Tuple[List[int], NDArray]]:
+    """Apply Change Point Detection using the ProDrift Algorithm from Fast And Accurate Business Process Drift Detection. Here, for the runs calculation, we consider the alpha relations observed in the event log inspected so far.
+
+    This is how I understand the explanation in the paper, however upon comparing with the existing implementation (Standalone Jar-File) I find that they seem to use the alpha relations from the entire event log (Implemented in `detectChangepoints`)
+
+    Args:
+        log (EventLog): The event log.
+        windowSize (int): The window size for the sliding window algorithm.
+        pvalue (float, optional): P-Value threshold for a pvalue to signify a change point. Defaults to 0.05. Defaults to 0.05.
+        activityName_key (str, optional): The key for the activity value in the event log. Defaults to xes.DEFAULT_NAME_KEY.
+        return_pvalues (bool, optional): Configures whether the computed p-values should be returned as well. Defaults to False.
+        progressBar_pos (Optional[int], optional): The `pos` argument of tqdm progress bars. In which line to print the progress bar. Defaults to None.
+
+    Returns:
+        Union[List[int], Tuple[List[int], NDArray]]: A list of the detected change point indices. If selected, also a numpy array of the calculated p-values
+    """  
+    
+    chis = []
+
+    # Initialize Directly-Follows Relations with those found in the first two instances of the windows
+    dfs = set([
+        (case[i][activityName_key], case[i+1][activityName_key]) for case in log[:2*windowSize] for i in range(len(case)-1)
+    ])
+    concurrents = {
+        (x,y) for x,y in dfs if (y,x) in dfs
+    }
+    progress = makeProgressBar(len(log), "Calculating runs ", position=progressBar_pos)
+    #Calculate sequence of runs
+    runs = []
+    trace_to_run = {} # Mapping of traces to runs, using the currently known alpha relations. Cleared when a new concurrent pair is found
+
+    for case in log:
+        # Update Directly-Follows Relations
+        dfs.update({
+            (case[i][activityName_key], case[i+1][activityName_key]) for i in range(len(case)-1)
+        })
+        new_concurrents = {
+            (x,y) for x,y in dfs if (y,x) in dfs
+        }
+        if new_concurrents != concurrents:
+            trace_to_run = {}
+            concurrents = new_concurrents
+
+        # Calculate Run of current Case
+        trace = tuple(x[activityName_key] for x in case)
+        if trace in trace_to_run.keys():
+            # If we have already computed this trace with these concurrency relations, use this result
+            runs.append(trace_to_run[trace])
+        else:
+            # First time we have seen this trace since the last time the concurrency relations changed; Compute the Runs
+            run = _caseToRun(case, concurrents,activityName_key=activityName_key)
+            runs.append(run)
+            trace_to_run[trace] = run
+        progress.update()
+
+    if progress is not None:
+        progress.reset(total=len(log)-(2*windowSize))
+        progress.set_description("Calculating P-Values")
+    # Iterate over runs
+    i = 0
+    while i < len(log)-(2*windowSize):
+        runs1 = runs[i:i + windowSize]
+        runs2 = runs[i+windowSize:i + (2*windowSize)]
+
+        #We are testing for a changepoint at i+windowSize
+        chis.append(chi_square(runs1, runs2))
+        i += step_size
+        if progress is not None:
+            progress.update(min(progress.total-progress.n, step_size))
+
+    # Find change points using the pvalues
+
+    # The number of consecutive points with chi-square result lower than alpha to be classified as a Changepoint 
+    # In the paper windowSize/3 was said to be best; We will use this
+    changepoints = []
+    phi = windowSize//3 #Integer division; Floor the value
+    consecutive_chis = 0
+    for index, val in enumerate(chis):
+        if val < pvalue:
+            consecutive_chis += 1
+        else:
+            consecutive_chis = 0
+        
+        if consecutive_chis == phi: # Enough Consecutive pvalues below threshold
+            changepoints.append(index)
+    progress.close()
+
+    # Correct changepoints (they are wrong because of initial `windowSize` indices get no value, and stride parameter)
+    changepoints = [x*step_size + windowSize for x in changepoints]
+
+    return changepoints if not return_pvalues else (changepoints, chis)

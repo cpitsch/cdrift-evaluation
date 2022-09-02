@@ -339,7 +339,7 @@ def visualInspection(signal, trim:int=0):
 
     Args:
         signal (np.ndarray): The EMD values to inspect
-        trim (int, optional): The number of values to trim from each side before detection. Defaults to 0. This is useful, because `windowSize` values at the beginning and end of the resulting EMD series default to 0, and are uninteresting and irrelevant for the inspection.
+        trim (int, optional): The number of values to trim from each side before detection. Defaults to 0. This is useful, because `windowSize` values at the beginning and end of the resulting EMD series default to 0, and are uninteresting and irrelevant for the inspection. If a stride value was used, the signal is already trimmed, so keep this value 0!
 
     Returns:
         List[int]: A list of found change point indices (integers)
@@ -351,3 +351,43 @@ def visualInspection(signal, trim:int=0):
     peaks= find_peaks(signal[trim:len(signal)-trim], width=80)[0]
     # return find_peaks(signal, width=80)[0] # Used for Earthmover Distance; The distances have a different nature than minima so prominence is ignored
     return [x+trim for x in peaks] # Correct the found indices, these indices count from the beginning of the trimmed version instead of from the beginning of the untrimmed version (which we want)
+
+
+def calculateDistSeriesStride(signal:np.ndarray, windowSize:int, stride:int=1, show_progressBar:bool=True, progressBar_pos:int=None):
+    if show_progressBar:
+        progress = makeProgressBar(len(signal)-(2*windowSize), "calculating earthmover values, completed windows", position=progressBar_pos)
+    #Default to Zeroes, because we are looking at distances, not pvalues!
+    pvals = []
+    distances = {}
+
+    i = 0
+    while i < len(signal) - (2*windowSize):
+        win1 = signal[i:i+windowSize]
+        win2 = signal[i+windowSize:i+(2*windowSize)]
+        #Convert to stochastic languages
+        pop1 = [(trace,freq/len(win1)) for (trace,freq) in Counter(win1).items()]
+        pop2 = [(trace,freq/len(win2)) for (trace,freq) in Counter(win2).items()]
+        distance, distances = calcEMD(pop1, pop2, previous_distances=distances, return_distances=True)
+        pvals.append(distance)
+        if show_progressBar:
+            progress.update(n=min(progress.total-progress.n, stride))
+        i += stride
+    if show_progressBar:
+        progress.close()
+    return pvals
+
+def translate_stride_cps_to_cps(cps:List[int], window_size:int, stride:int):
+    """Translates a set of detected change points using a stride value to the correct change point locations
+
+    Args:
+        cps (List[int]): List of detected change points
+        window_size (int): The window size used to detect the changes
+        stride (int): The stride value used to detect the changes
+    """
+    return [x*stride+window_size for x in cps]
+
+def detect_change(log:EventLog, window_size:int, stride:int=1, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progress_bar_pos:int=None):
+    traces = extractTraces(log, activityName_key=activityName_key)
+    dists = calculateDistSeriesStride(traces,window_size,stride,show_progress_bar,progress_bar_pos)
+    cps = visualInspection(dists, trim=0)
+    return translate_stride_cps_to_cps(cps, window_size, stride)
