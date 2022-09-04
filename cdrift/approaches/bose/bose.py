@@ -599,7 +599,7 @@ def visualInspection_Step(signal:np.ndarray, window_size:int, step_size:int=1)->
     """
     # Only send the trimmed version into the peak-finding algorithm; Because the initial, and final zero-values are the default values, and no comparison was made there, so it doesn't count for the peak finding
 
-    peaks= find_peaks(-signal, width=80, prominence=0.1)[0]
+    peaks= find_peaks(-signal, width=80/step_size, prominence=0.1)[0]
     return [(x*step_size) + window_size for x in peaks] # Add the window that was lost from the beginning
 
 def detectChange_JMeasure_KS_Step(log:EventLog, windowSize:int, measure_window:int=None, step_size:int=1, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progressBarPos:int=None)->np.ndarray:

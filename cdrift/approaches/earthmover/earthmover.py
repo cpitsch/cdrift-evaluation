@@ -376,18 +376,29 @@ def calculateDistSeriesStride(signal:np.ndarray, windowSize:int, stride:int=1, s
         progress.close()
     return pvals
 
-def translate_stride_cps_to_cps(cps:List[int], window_size:int, stride:int):
-    """Translates a set of detected change points using a stride value to the correct change point locations
+
+def visualInspection_Stride(signal, window_size:int, step_size:int=1):
+    """Automated visual inspection of distances. Used for consistent and unbiased evaluations.
+
+    Based on the `find_peaks` algorithm of scipy.
 
     Args:
-        cps (List[int]): List of detected change points
-        window_size (int): The window size used to detect the changes
-        stride (int): The stride value used to detect the changes
+        signal (np.ndarray): The EMD values to inspect
+        trim (int, optional): The number of values to trim from each side before detection. Defaults to 0. This is useful, because `windowSize` values at the beginning and end of the resulting EMD series default to 0, and are uninteresting and irrelevant for the inspection. If a stride value was used, the signal is already trimmed, so keep this value 0!
+
+    Returns:
+        List[int]: A list of found change point indices (integers)
     """
-    return [x*stride+window_size for x in cps]
+
+    # Divide width by step size because if we look for a peak with width 80 on step size 1, this corresponds to a width of 40 on step size 2
+    # This could become problematic with higher step sizes since the width would go towards 0...
+    peaks= find_peaks(signal, width=80/step_size)[0]
+
+    # Correct the found indices by adding the window size that was lost
+    # also multiply by step size to get location in log
+    return [(x*step_size) + window_size for x in peaks]
 
 def detect_change(log:EventLog, window_size:int, stride:int=1, activityName_key:str=xes.DEFAULT_NAME_KEY, show_progress_bar:bool=True, progress_bar_pos:int=None):
     traces = extractTraces(log, activityName_key=activityName_key)
     dists = calculateDistSeriesStride(traces,window_size,stride,show_progress_bar,progress_bar_pos)
-    cps = visualInspection(dists, trim=0)
-    return translate_stride_cps_to_cps(cps, window_size, stride)
+    return visualInspection_Stride(dists, window_size, stride)
