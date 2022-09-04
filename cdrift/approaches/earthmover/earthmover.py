@@ -344,10 +344,6 @@ def visualInspection(signal, trim:int=0):
     Returns:
         List[int]: A list of found change point indices (integers)
     """
-
-    """
-        Detects maxima in a signal
-    """
     peaks= find_peaks(signal[trim:len(signal)-trim], width=80)[0]
     # return find_peaks(signal, width=80)[0] # Used for Earthmover Distance; The distances have a different nature than minima so prominence is ignored
     return [x+trim for x in peaks] # Correct the found indices, these indices count from the beginning of the trimmed version instead of from the beginning of the untrimmed version (which we want)
