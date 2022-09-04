@@ -3,5 +3,5 @@ from cdrift.approaches.earthmover.earthmover import \
     calculateDistSeries,\
     calculateDistSeriesStride,\
     visualInspection,\
-    translate_stride_cps_to_cps,\
+    visualInspection_Stride,\
     detect_change
