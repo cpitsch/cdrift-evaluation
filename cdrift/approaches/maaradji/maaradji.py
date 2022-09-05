@@ -74,6 +74,11 @@ def _caseToRun(case:Trace, concurrents:Set[Tuple[str,str]], activityName_key:str
         FrozenSet[Tuple[str,str]]: A set of directly-follows relations, representing the computed partial order
     """
 
+    # Add an index attribue to each event to discern events that are practically identical (e.g., same activity AND timestamp) (yes, I learned this the hard way)
+    # TODO: Work on a copy of the case to avoid side effects
+    for idx, evt in enumerate(case):
+        evt['cdrift_index'] = idx
+
     #Compute the closure of ltdot 
     ltdot_closure = _transitiveClosure_Cases(case)
     # Remove the events with concurrent activities
