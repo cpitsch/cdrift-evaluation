@@ -307,6 +307,7 @@ def scatter_f1_duration(dfs:List[pd.DataFrame]):
         plt.figure: The figure object containing the plot.
     """    
 
+    # Marker + Color Mapping for algorithms (and "synonymous" algorithm names)
     markers = {
         "Bose J": "^", # triangle_up
         "Bose WC": "^", # triangle_up
@@ -323,9 +324,12 @@ def scatter_f1_duration(dfs:List[pd.DataFrame]):
         "Martjushev ADWIN J": "#32cd32", # Navy Green
         "Martjushev ADWIN WC": "#006400", # Dark Green
         "ProDrift": "#ff0000", # Red
+        "Maaradji Runs": "#ff0000", # Red
         "Earth Mover's Distance": "#ffa500", # Orange
         "Process Graphs": "#ddcd10", # Some dark, rich yellow
-        "Zheng": "#800080" # Purple
+        "Process Graph Metrics": "#ddcd10", # Some dark, rich yellow
+        "Zheng": "#800080", # Purple
+        "Zheng DBSCAN": "#800080" # Purple
         # The rest is just whatever it wants to give them
     }
 
