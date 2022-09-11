@@ -247,6 +247,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         'P-Value': pvalue,
         'Min Adaptive Window': min_window,
         'Max Adaptive Window': max_window,
+        'ADWIN Step Size': step_size,
         'Detected Changepoints': adwin_j_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=adwin_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -260,6 +261,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         'P-Value': pvalue,
         'Min Adaptive Window': min_window,
         'Max Adaptive Window': max_window,
+        'ADWIN Step Size': step_size,
         'Detected Changepoints': adwin_wc_cp,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=adwin_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -325,10 +327,11 @@ def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, positio
     # Save Results #
 
     new_entry = {
-        'Algorithm':"Maaradji Runs",
+        'Algorithm':"ProDrift",
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': window_size,
+        'SW Step Size': step_size,
         'Detected Changepoints': cp_runs,
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
@@ -357,6 +360,7 @@ def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locati
         'Algorithm':"Process Graph Metrics", 
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
+        'P-Value': pvalue,
         'Min Adaptive Window': min_window,
         'Max Adaptive Window': max_window,
         'Detected Changepoints': cp,
@@ -367,7 +371,7 @@ def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locati
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.PROCESS_GRAPHS.value, f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.PROCESS_GRAPHS.value, f"{logname}_P{pvalue}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
     return [new_entry]
 
 def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, show_progress_bar=True):
