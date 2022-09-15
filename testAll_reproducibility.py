@@ -327,7 +327,7 @@ def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, positio
     # Save Results #
 
     new_entry = {
-        'Algorithm':"ProDrift",
+        'Algorithm':"Maaradji Runs",
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Window Size': window_size,
