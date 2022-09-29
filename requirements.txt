@@ -7,3 +7,4 @@ pulp==2.6.0
 scikit-learn==1.1.2
 plotly==5.9.0
 kaleido==0.1.0.post1
+seaborn==0.12.0
