@@ -1,7 +1,7 @@
 # Concept Drift Evaluation #
-- The results for each algorithm and parameter setting can be found in [`evaluation_results.csv`](./evaluation_results.csv).
-- The resulting evaluation measures as described in the paper are listed in [`evaluation_metrics.csv`](./evaluation_measures.csv).
-- The corresponding figures for the individial evaluation measures are in the [`Eval_Figures`](./Eval_Figures/) folder.
+- The results for each algorithm and parameter setting can be found in [`algorithm_results.csv`](./algorithm_results.csv).
+- The resulting evaluation measures as described in the paper are listed in [`evaluation_measures.csv`](./Evaluation_Results/evaluation_measures.csv).
+- The corresponding figures for the individial evaluation measures are in the [`Evaluation_Results`](./Evaluation_Results/) folder.
 
 # Usage #
 The required packages can be installed using anaconda: 
@@ -10,10 +10,17 @@ The required packages can be installed using anaconda:
 ...
 > conda activate cdrift-evaluation
 ```
+
+Or with the [`requirements.txt`](./requirements.txt) file:
+```bash
+> pip install -r requirements.txt
+```
+
 ## Perfoming the Evaluation &mdash; Running all Algorithms ##
 - To run the algorithms on all event logs and parameter settings, execute the [`testAll_reproducibility.py`](./testAll_reproducibility.py) file.
-- This will create a CSV file containing the detected change points for every algorithm, event log, and parameter setting. 
+- This will create a CSV file, `algorithm_results.csv`, containing the detected change points for every algorithm, event log, and parameter setting. 
   - During the execution, also CSV files will be created containing the results for individual executions of the algorithms.
+
 ## Using the Approaches ##
 
 - One can explore the algorithms and their parameters in the provided jupyter notebooks `<algorithm-name>_example.ipynb` in the Examples directory:
@@ -28,8 +35,8 @@ The required packages can be installed using anaconda:
 
 Event Logs can be found in the [`EvaluationLogs`](./EvaluationLogs/) folder. These are the event logs used in the evaluation, which are sourced from:
 
-- Ostovar et al. Robust Drift Characterization from Event Streams of Business Processes[^ostovar]
-- Ceravolo et al. Evaluation Goals for Online Process Mining: a Concept Drift Perspective [^ceravolo]
+- Ostovar et al. Robust Drift Characterization from Event Streams of Business Processes[^ostovar] ([Source](https://apromore.com/research-lab/#heading16))
+- Ceravolo et al. Evaluation Goals for Online Process Mining: a Concept Drift Perspective [^ceravolo] ([Source](https://dx.doi.org/10.21227/2kxd-m509))
 - Bose et al. Handling Concept Drift in Process Mining  [^bose]
 
 [^ostovar]: Ostovar et al. Robust Drift Characterization from Event Streams of Business Processes. URL https://www.doi.org/10.1145/3375398
