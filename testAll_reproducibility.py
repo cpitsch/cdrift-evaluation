@@ -538,7 +538,7 @@ def main():
 
     flattened_results = [res for function_return in results for res in function_return]
     df = pd.DataFrame(flattened_results)
-    df.to_csv("evaluation_results.csv", index=False)
+    df.to_csv("algorithm_results.csv", index=False)
 
     if DO_PARETO_FRONT:
         # Convert String Duration Column to Datetime
