@@ -5,5 +5,3 @@ Sample\ Logs/*
 evaluation_results_temp.csv
 # Ignore PyCache
 __pycache__
-
-EvaluationLogs/*
