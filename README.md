@@ -1,6 +1,6 @@
 # Concept Drift Evaluation #
 - The results for each algorithm and parameter setting can be found in [`algorithm_results.csv`](./algorithm_results.csv).
-- The resulting evaluation measures as described in the paper are listed in [`evaluation_measures.csv`](./Evaluation_Results/evaluation_measures.csv).
+- The resulting evaluation measures (for a Lag Window of `100`) as described in the paper are listed in [`evaluation_measures100.csv`](./Evaluation_Results/evaluation_measures100.csv).
 - The corresponding figures for the individial evaluation measures are in the [`Evaluation_Results`](./Evaluation_Results/) folder.
 
 # Usage #
@@ -16,10 +16,15 @@ Or with the [`requirements.txt`](./requirements.txt) file:
 > pip install -r requirements.txt
 ```
 
-## Perfoming the Evaluation &mdash; Running all Algorithms ##
+## Running all Algorithms ##
 - To run the algorithms on all event logs and parameter settings, execute the [`testAll_reproducibility.py`](./testAll_reproducibility.py) file.
 - This will create a CSV file, `algorithm_results.csv`, containing the detected change points for every algorithm, event log, and parameter setting. 
   - During the execution, also CSV files will be created containing the results for individual executions of the algorithms.
+
+## Performing the Evaluation ##
+After running all the algorithms, the evaluation can be performed using the notebook: [`evaluate_results.ipynb`](./evaluate_results.ipynb). This will create a folder [`Evaluation_Results`](./Evaluation_Results/) containing:
+- A csv file [`evaluation_measures<lag-window>.csv`](./Evaluation_Results/evaluation_measures100.csv) containing all evaluation metrics as defined in the paper
+- All the generated figures
 
 ## Using the Approaches ##
 
