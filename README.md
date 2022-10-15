@@ -1,6 +1,6 @@
 # Concept Drift Evaluation #
 - The results for each algorithm and parameter setting can be found in [`algorithm_results.csv`](./algorithm_results.csv).
-- The resulting evaluation measures (for a Lag Window of `100`) as described in the paper are listed in [`evaluation_measures100.csv`](./Evaluation_Results/evaluation_measures100.csv).
+- The resulting evaluation measures (for a Lag Window of `200`) as described in the paper are listed in [`evaluation_measures200.csv`](./Evaluation_Results/evaluation_measures200.csv).
 - The corresponding figures for the individial evaluation measures are in the [`Evaluation_Results`](./Evaluation_Results/) folder.
 
 # Usage #
@@ -23,7 +23,7 @@ Or with the [`requirements.txt`](./requirements.txt) file:
 
 ## Performing the Evaluation ##
 After running all the algorithms, the evaluation can be performed using the notebook: [`evaluate_results.ipynb`](./evaluate_results.ipynb). This will create a folder [`Evaluation_Results`](./Evaluation_Results/) containing:
-- A csv file [`evaluation_measures<lag-window>.csv`](./Evaluation_Results/evaluation_measures100.csv) containing all evaluation metrics as defined in the paper
+- A csv file [`evaluation_measures<lag-window>.csv`](./Evaluation_Results/evaluation_measures200.csv) containing all evaluation metrics as defined in the paper
 - All the generated figures
 
 ## Using the Approaches ##
