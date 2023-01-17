@@ -2,7 +2,7 @@
     This is a close translation of the LCDD algorithm implemented [here](https://github.com/lll-lin/THUBPM/)
 """
 
-from typing import Dict, List, Set, Tuple
+from typing import List, Set, Tuple
 from pm4py.objects.log.obj import EventLog, Trace
 from pm4py.util import xes_constants as xes
 
