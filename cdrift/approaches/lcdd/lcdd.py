@@ -2,15 +2,17 @@ from typing import Dict, List, Set, Tuple
 from pm4py.objects.log.obj import EventLog, Trace
 from pm4py.util import xes_constants as xes
 
+from collections import Counter
+
 """
     This is a close translation of the LCDD algorithm implemented [here](https://github.com/lll-lin/THUBPM/)
 """
 
 
-def calculate(log: EventLog, complete_window_size:int=200, detection_window_size:int=200, stable_period:int=10):
+def calculate(log: EventLog, complete_window_size:int=200, detection_window_size:int=200, stable_period:int=10) -> List[int]:
     """Applies the LCDD algorithm to the Event Log. 
 
-    "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/master/driftDetection.py)
+    "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/7d34741f487daa48dea7ef74d40198d1bd806b20/driftDetection.py#L10)
 
     Args:
         log (EventLog): The event log
@@ -28,24 +30,19 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
     # First convert log to the "logdict" object they use
     logDict:List[Set[Tuple[str,str]]] = store_log_in_dict(log)
 
-    # I understand "logdict" to be a list of dictionaries, each dictionary being a case (event?), so very similar to pm4py log objects
     changepoints = []
 
     index = 0
     windowIndex = 0
     steadyStateDSset: Set[Tuple[str, str]] = set()
-    steadyStateDSset_list = set()
 
-    disappeared_dict = dict()
-    disappear_set = set()
+    disappeared_counter = Counter()
 
     while index < len(logDict):
         traceDS = logDict[index]
     
         if windowIndex < complete_window_size:
             steadyStateDSset.update(traceDS)
-            # for relation in traceDS:
-            #     steadyStateDSset.add(relation)
             windowIndex += 1
         elif windowIndex < complete_window_size + detection_window_size:
             isnotCut = traceDS.issubset(steadyStateDSset)
@@ -54,63 +51,78 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
                 index = index - 1
                 windowIndex = 0
                 steadyStateDSset.clear()
-                disappeared_dict.clear()
+                disappeared_counter.clear()
             else:
                 for DS in traceDS:
-                    if DS not in disappeared_dict.keys():
-                        disappeared_dict[DS] = 1
-                    else:
-                        disappeared_dict[DS] = 1 + disappeared_dict[DS]
+                    disappeared_counter.update([DS])
+
                 windowIndex += 1
         else:
-            isDisappearCut = isCutFromDisappear(disappeared_dict, steadyStateDSset)
+            isDisappearCut = isCutFromDisappear(disappeared_counter, steadyStateDSset)
             if isDisappearCut:
                 startIndexW2 = index - detection_window_size
-                indexChange = candidateDisappear(steadyStateDSset, disappeared_dict, logDict, startIndexW2, index, stable_period)
+                indexChange = candidateDisappear(steadyStateDSset, disappeared_counter, logDict, startIndexW2, index, stable_period)
 
                 changepoints.append(indexChange)
                 index = indexChange - 1
                 windowIndex = 0
                 steadyStateDSset.clear()
-                disappeared_dict.clear()
-            elif not isDisappearCut: # if it comes to the else, this should always be the case
+                disappeared_counter.clear()
+            else:
                 # move w2
 
                 startIndexW2 = index - detection_window_size
                 for DS in logDict[startIndexW2]:
-                    disappeared_dict[DS] = disappeared_dict[DS] - 1
-                    if disappeared_dict[DS] == 0:
-                        del disappeared_dict[DS]
+                    disappeared_counter.subtract([DS])
+
                 windowIndex -= 1
                 index -= 1
         index += 1
     return changepoints
 
 
-def isCutFromDisappear(disappeared_dict: Dict[Tuple[str,str], int], steadyStateDSset: Set[Tuple[str, str]]):
+def isCutFromDisappear(disappeared_counter: Dict[Tuple[str,str], int], steadyStateDSset: Set[Tuple[str, str]]) -> bool:
     """Check if a change point is present due to a disappeared directly
 
+    "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/7d34741f487daa48dea7ef74d40198d1bd806b20/driftDetection.py#L106).
+
     Args:
-        disappeared_dict (Dict[Tuple[str,str], int]): _description_
+        disappeared_counter (Dict[Tuple[str,str], int]): _description_
         steadyStateDSset (Set[Tuple[str, str]]): _description_
 
     Returns:
-        _type_: _description_
+        bool: Is there a missing Directly Follows relation?
     """
 
-    DSsetInTrace = set(disappeared_dict)
+    DSsetInTrace = set(disappeared_counter)
     differentDSset = steadyStateDSset.difference(DSsetInTrace)
 
     return len(differentDSset) > 1
 
-def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_dict: Dict[Tuple[str,str], int], logDict: List[Set[Tuple[str,str]]], startIndexW2: int, index: int, maxRadius: int):
+def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_counter: Dict[Tuple[str,str], int], logDict: List[Set[Tuple[str,str]]], startIndexW2: int, index: int, maxRadius: int) -> int:
+    """Find the exact location of the change point.
+
+    "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/7d34741f487daa48dea7ef74d40198d1bd806b20/driftDetection.py#L73).
+
+    Args:
+        steadyStateDSset (Set[Tuple[str, str]]): _description_
+        disappeared_counter (Dict[Tuple[str,str], int]): _description_
+        logDict (List[Set[Tuple[str,str]]]): _description_
+        startIndexW2 (int): The index in the event log where the detection window begins
+        index (int): The current index that triggered a change point detection
+        maxRadius (int): The stability period
+
+    Returns:
+        int: The index of the detected change point
+    """
+
     iterIndex = startIndexW2
     storeDisappearedDS_set = set()
     trueChangePoint = startIndexW2
     radius = maxRadius
 
     while iterIndex < index:
-        DSsetInTrace = set(disappeared_dict)
+        DSsetInTrace = set(disappeared_counter)
         differentDSset = steadyStateDSset.difference(DSsetInTrace)
 
         if len(differentDSset) > 1:
@@ -126,9 +138,8 @@ def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_dict:
                     break
 
         for DS in logDict[iterIndex]:
-            disappeared_dict[DS] = disappeared_dict[DS] - 1
-            if disappeared_dict[DS] == 0:
-                del disappeared_dict[DS]
+            disappeared_counter.subtract([DS])
+
         iterIndex += 1
 
     return trueChangePoint
