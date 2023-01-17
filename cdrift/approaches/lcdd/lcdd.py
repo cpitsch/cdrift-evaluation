@@ -80,13 +80,13 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
     return changepoints
 
 
-def isCutFromDisappear(disappeared_counter: Dict[Tuple[str,str], int], steadyStateDSset: Set[Tuple[str, str]]) -> bool:
+def isCutFromDisappear(disappeared_counter: Counter[Tuple[str,str]], steadyStateDSset: Set[Tuple[str, str]]) -> bool:
     """Check if a change point is present due to a disappeared directly
 
     "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/7d34741f487daa48dea7ef74d40198d1bd806b20/driftDetection.py#L106).
 
     Args:
-        disappeared_counter (Dict[Tuple[str,str], int]): _description_
+        disappeared_counter (Counter[Tuple[str,str]]): _description_
         steadyStateDSset (Set[Tuple[str, str]]): _description_
 
     Returns:
@@ -98,14 +98,14 @@ def isCutFromDisappear(disappeared_counter: Dict[Tuple[str,str], int], steadySta
 
     return len(differentDSset) > 1
 
-def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_counter: Dict[Tuple[str,str], int], logDict: List[Set[Tuple[str,str]]], startIndexW2: int, index: int, maxRadius: int) -> int:
+def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_counter: Counter[Tuple[str,str]], logDict: List[Set[Tuple[str,str]]], startIndexW2: int, index: int, maxRadius: int) -> int:
     """Find the exact location of the change point.
 
     "Translated" from the implementation found [here](https://github.com/lll-lin/THUBPM/blob/7d34741f487daa48dea7ef74d40198d1bd806b20/driftDetection.py#L73).
 
     Args:
         steadyStateDSset (Set[Tuple[str, str]]): _description_
-        disappeared_counter (Dict[Tuple[str,str], int]): _description_
+        disappeared_counter (Count[Tuple[str,str]]): _description_
         logDict (List[Set[Tuple[str,str]]]): _description_
         startIndexW2 (int): The index in the event log where the detection window begins
         index (int): The current index that triggered a change point detection
