@@ -1,12 +1,12 @@
+"""
+    This is a close translation of the LCDD algorithm implemented [here](https://github.com/lll-lin/THUBPM/)
+"""
+
 from typing import Dict, List, Set, Tuple
 from pm4py.objects.log.obj import EventLog, Trace
 from pm4py.util import xes_constants as xes
 
 from collections import Counter
-
-"""
-    This is a close translation of the LCDD algorithm implemented [here](https://github.com/lll-lin/THUBPM/)
-"""
 
 
 def calculate(log: EventLog, complete_window_size:int=200, detection_window_size:int=200, stable_period:int=10) -> List[int]:
@@ -53,8 +53,7 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
                 steadyStateDSset.clear()
                 disappeared_counter.clear()
             else:
-                for DS in traceDS:
-                    disappeared_counter.update([DS])
+                disappeared_counter.update(traceDS)
 
                 windowIndex += 1
         else:
@@ -71,8 +70,7 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
             else:
                 # Move the detection window
                 startIndexW2 = index - detection_window_size
-                for DS in logDict[startIndexW2]:
-                    disappeared_counter.subtract([DS])
+                disappeared_counter.subtract(logDict[startIndexW2])
 
                 windowIndex -= 1
                 index -= 1
@@ -129,16 +127,13 @@ def candidateDisappear(steadyStateDSset: Set[Tuple[str, str]], disappeared_count
             if len(notSame_disappeared_DS) > 1:
                 radius = maxRadius
                 trueChangePoint = iterIndex
-                for DS in notSame_disappeared_DS:
-                    storeDisappearedDS_set.add(DS)
+                storeDisappearedDS_set.update(notSame_disappeared_DS)
             else:
                 radius -= 1
                 if radius == 0:
                     break
-
-        for DS in logDict[iterIndex]:
-            disappeared_counter.subtract([DS])
-
+                
+        disappeared_counter.subtract(logDict[iterIndex])
         iterIndex += 1
 
     return trueChangePoint
