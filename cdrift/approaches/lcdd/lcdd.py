@@ -69,8 +69,7 @@ def calculate(log: EventLog, complete_window_size:int=200, detection_window_size
                 steadyStateDSset.clear()
                 disappeared_counter.clear()
             else:
-                # move w2
-
+                # Move the detection window
                 startIndexW2 = index - detection_window_size
                 for DS in logDict[startIndexW2]:
                     disappeared_counter.subtract([DS])
