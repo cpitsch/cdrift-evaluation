@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 
-from cdrift.approaches import earthmover, bose, martjushev
+from cdrift.approaches import earthmover, bose, martjushev, lcdd
 
 #Maaradji
 from cdrift.approaches import maaradji as runs
@@ -40,6 +40,7 @@ class Approaches(enum.Enum):
     MAARADJI = "Maaradji"
     PROCESS_GRAPHS = "ProcessGraph"
     ZHENG = "Zheng"
+    LCDD = "LCDD"
 
 
 #################################
@@ -54,7 +55,8 @@ DO_APPROACHES = {
     Approaches.EARTHMOVER: True,
     Approaches.MAARADJI: True,
     Approaches.PROCESS_GRAPHS: True,
-    Approaches.ZHENG: True
+    Approaches.ZHENG: True,
+    Approaches.LCDD: True
 }
 
 # Which specific sub-approaches to test (if the approach itself is tested)
@@ -444,6 +446,40 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
             pd.DataFrame([entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.ZHENG.value, f"{logname}_MRID{mrid}_EPS{str(entry['Epsilon']).replace('.','_')}.csv"), index=False)
     return ret
 
+def testLCDD(filepath, complete_window_size, detection_window_size, stable_period, F1_LAG, cp_locations, position, show_progress_bar=True):
+
+    log = helpers.importLog(filepath, verbose=False)
+    logname = filepath.split('/')[-1].split('.')[0]
+
+    startTime = default_timer()
+
+    cp_lcdd = lcdd.calculate(log, complete_window_size, detection_window_size, stable_period)
+
+    endTime = default_timer()
+    durStr = calcDurationString(startTime, endTime)
+
+    # Save Results #
+
+    new_entry = {
+        'Algorithm':"LCDD",
+        'Log Source': Path(filepath).parent.name,
+        'Log': logname,
+        'Complete-Window Size': complete_window_size,
+        'Detection-Window Size': detection_window_size, # TODO: Decide if CW and DW should be equal in all tests
+        'Stable Period': stable_period,
+        'Detected Changepoints': cp_lcdd,
+        'Actual Changepoints for Log': cp_locations,
+        'F1-Score': evaluation.F1_Score(detected=cp_lcdd, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
+        'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_lcdd, actual_changepoints=cp_locations, lag=F1_LAG),
+        'Duration': durStr,
+        'Seconds per Case': len(log) / (endTime-startTime)
+    }
+    
+    if os.path.exists("Reproducibility_Intermediate_Results"):
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.LCDD.value, f"{logname}_CW{complete_window_size}_DW{detection_window_size}_SP{stable_period}.csv"), index=False)
+    return [new_entry]
+
+
 def testSomething(arg):
     """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
 
@@ -469,6 +505,8 @@ def testSomething(arg):
         return testGraphMetrics(*arguments, position=idx, show_progress_bar=show_bar)
     elif name == Approaches.ZHENG:
         return testZhengDBSCAN(*arguments, position=idx, show_progress_bar=show_bar)
+    elif name == Approaches.LCDD:
+        return testLCDD(*arguments, position=idx, show_progress_bar=show_bar)
 
 def main():
     #Evaluation Parameters
@@ -523,15 +561,19 @@ def main():
         for mrid in mrids
     ]
 
+    # Special Parameters for LCDD
+    stable_periods = [10,20,30]
+    # TODO: Complete-Window- and Detection-Window Sizes; For now, I am only using equal windows, taken from windowSizes.
     SW_STEP_SIZES = [2]
 
-    bose_args             =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES]
-    martjushev_args       =  [(path, winSize,                  F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       ]
-    martjushev_adwin_args =  [(path, w_min, w_max, pval, step, F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in mart_pvalues   for step in step_sizes ]
-    em_args               =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES]
-    maaradji_args         =  [(path, winSize, step_size,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes for step_size in SW_STEP_SIZES]
-    pgraph_args           =  [(path, w_min, w_max, pval,       F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
-    zhengDBSCAN_args      =  [(path, mrid,    epsList,         F1_LAG, cp_locations)     for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs    ]
+    bose_args             =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES                    ]
+    martjushev_args       =  [(path, winSize,                         F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                                         ]
+    martjushev_adwin_args =  [(path, w_min, w_max, pval, step,        F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in mart_pvalues   for step in step_sizes ]
+    em_args               =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES                    ]
+    maaradji_args         =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes for step_size in SW_STEP_SIZES                    ]
+    pgraph_args           =  [(path, w_min, w_max, pval,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
+    zhengDBSCAN_args      =  [(path, mrid,    epsList,                F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                                                      ]
+    lcdd_args             =  [(path, winSize, winSize, stable_period, F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for stable_period in stable_periods               ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
         + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
@@ -541,6 +583,7 @@ def main():
         + ([ (Approaches.BOSE, args)               for args in bose_args                ] if DO_APPROACHES[Approaches.BOSE              ]         else [])
         + ([ (Approaches.MARTJUSHEV, args)         for args in martjushev_args          ] if DO_APPROACHES[Approaches.MARTJUSHEV        ]         else [])
         + ([ (Approaches.MARTJUSHEV_ADWIN, args)   for args in martjushev_adwin_args    ] if DO_APPROACHES[Approaches.MARTJUSHEV_ADWIN  ]         else [])
+        + ([ (Approaches.LCDD, args)               for args in lcdd_args                ] if DO_APPROACHES[Approaches.LCDD              ]         else [])
     )
 
     # Shuffle the Tasks
