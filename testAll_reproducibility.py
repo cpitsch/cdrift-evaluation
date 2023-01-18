@@ -156,7 +156,8 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_j, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_J
+        'Duration': durStr_J,
+        'Seconds per Case': len(log) / j_dur
     }
     new_entry_wc = {
         'Algorithm':"Bose WC", 
@@ -168,7 +169,8 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_wc, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_WC
+        'Duration': durStr_WC,
+        'Seconds per Case': len(log) / wc_dur
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
@@ -202,7 +204,8 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_J
+        'Duration': durStr_J,
+        'Seconds per Case': len(log) / j_dur
     }
     new_entry_wc = {
         'Algorithm':"Martjushev WC", 
@@ -214,7 +217,8 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_WC
+        'Duration': durStr_WC,
+        'Seconds per Case': len(log) / wc_dur
     }
     if os.path.exists("Reproducibility_Intermediate_Results"):
         pd.DataFrame([new_entry_j, new_entry_wc]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV.value, f"{logname}_WIN{window_size}.csv"), index=False)
@@ -252,7 +256,8 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=adwin_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_J
+        'Duration': durStr_J,
+        'Seconds per Case': len(log) / j_dur
     }
     new_entry_wc = {
         'Algorithm':"Martjushev ADWIN WC", 
@@ -266,7 +271,8 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=adwin_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr_WC
+        'Duration': durStr_WC,
+        'Seconds per Case': len(log) / wc_dur
     }
     if os.path.exists("Reproducibility_Intermediate_Results"):
         pd.DataFrame([new_entry_j, new_entry_wc]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV_ADWIN.value, f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
@@ -303,7 +309,8 @@ def testEarthMover(filepath, window_size, step_size, F1_LAG, cp_locations, posit
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_em, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr
+        'Duration': durStr,
+        'Seconds per Case': len(log) / (endTime-startTime)
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
@@ -336,7 +343,8 @@ def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, positio
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_runs, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr
+        'Duration': durStr,
+        'Seconds per Case': len(log) / (endTime-startTime)
     }
     
     if os.path.exists("Reproducibility_Intermediate_Results"):
@@ -367,7 +375,8 @@ def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locati
         'Actual Changepoints for Log': cp_locations,
         'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
-        'Duration': durStr
+        'Duration': durStr,
+        'Seconds per Case': len(log) / (endTime-startTime)
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
@@ -403,7 +412,8 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
             'Actual Changepoints for Log': cp_locations,
             'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
-            'Duration': durStr
+            'Duration': durStr,
+            'Seconds per Case': len(log) / (endTime-startTime)
         }
         ret.append(new_entry)
     if os.path.exists("Reproducibility_Intermediate_Results"):
