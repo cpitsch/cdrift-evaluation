@@ -64,7 +64,7 @@ def transitiveClosure(relation:Set[Tuple[str,str]])->Set[Tuple[str,str]]:
         Set[Tuple[str,str]]: The transitive closure of the relation.
     """
 
-    digraph = nx.DiGraph(relation)
+    digraph = nx.DiGraph(list(relation))
     closure = nx.transitive_closure(digraph, reflexive=None)
     return set(closure.edges())
 
@@ -79,7 +79,7 @@ def transitiveReduction(relation:Set[Tuple[str,str]])->Set[Tuple[str,str]]:
         Set[Tuple[str,str]]: The transitive reduction of the relation.
     """
 
-    digraph = nx.DiGraph(relation)
+    digraph = nx.DiGraph(list(relation))
     reduction = nx.transitive_reduction(digraph)
     return set(reduction.edges())
 
