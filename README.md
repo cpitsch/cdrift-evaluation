@@ -95,7 +95,7 @@ changepoints = earthmover.visualInspection(em_dists,trim=windowSize) # Visual In
 from cdrift.approaches import process_graph_metrics as pgm
 from pm4py import read_xes
 log = read_xes(PATH_TO_LOG) # Import the Log
-changepoints = pgm.detectChange(log, windowSize,maxWinSize, pvalue)
+changepoints = pgm.detectChange(log, windowSize, maxWinSize, pvalue)
 ```
 
 ### Zheng et al. (RINV) ###
@@ -104,7 +104,16 @@ changepoints = pgm.detectChange(log, windowSize,maxWinSize, pvalue)
 from cdrift.approaches import zheng
 from pm4py import read_xes
 log = read_xes(PATH_TO_LOG) # Import the Log
-changepoints = zheng.apply(log,mrid, epsilon)
+changepoints = zheng.apply(log, mrid, epsilon)
+```
+
+### LCDD ###
+- Apply the full pipeline with:
+```python
+from cdrift.approaches import lcdd
+from pm4py import read_xes
+log = read_xes(PATH_TO_LOG) # Import the Log
+changepoints = lcdd.calculate(log, complete_window_size, detection_window_size, stable_period)
 ```
 ## Evaluation ##
 - Evaluation for specific instances is performed using [`evaluation.py`](./cdrift/evaluation.py):
