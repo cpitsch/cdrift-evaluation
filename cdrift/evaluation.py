@@ -65,7 +65,7 @@ def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_divis
         recall = zero_division
     return (precision, recall)
 
-def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn", verbose:bool=False, count_duplicate_detections:bool=True) -> float:
+def F1_Score(detected:List[int], known: List[int], lag:int, zero_division=np.NaN, verbose:bool=False, count_duplicate_detections:bool=True) -> float:
     """ Calculates the F1 Score for a Changepoint Detection Result
 
     - Considering a known changepoint at timepoint t:
@@ -79,7 +79,7 @@ def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn"
         detected (List[int]) : A list of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
         lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
-        zero_division (str, optional): The return value if the calculation of precision/recall/F1 divides by 0. If set to "warn", 0 is returned and a warning is printed out. Defaults to "warn".
+        zero_division (str, optional): The return value if the calculation of precision/recall/F1 divides by 0.
         verbose (bool, optional): If verbose, warning messages are printed when a zero-division is encountered. Defaults to False.
         count_duplicate_detections (bool, optional): If a detected change point is not assigned to a ground truth change point, but lies within the lag window of some ground truth change point, should it be counted as a false positive (True if yes, False if no). Defaults to True.
 
@@ -95,7 +95,7 @@ def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn"
         f1_score = (2*precision*recall)/(precision+recall)
         return f1_score
     except ZeroDivisionError:
-        if zero_division == "warn" and verbose:
+        if verbose:
             print("Calculation of F1-Score resulted in division by 0.")
         return zero_division
 
