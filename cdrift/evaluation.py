@@ -2,7 +2,7 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union
 
 import numpy as np
 import pandas as pd
@@ -12,23 +12,35 @@ from pulp import LpProblem, LpMinimize, LpMaximize, LpVariable, LpBinary, lpSum,
 
 from cdrift.utils.helpers import calcAvgDuration, convertToTimedelta
 
-def getTP_FP(detected:List[int], known:List[int], lag:int)-> Tuple[int,int]:
+def getTP_FP(detected:List[int], known:List[int], lag:int, count_duplicate_detections:bool = True)-> Tuple[int,int]:
     """Returns the number of true and false positives, using assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
         detected (List[int]): List of indices of detected change point locations.
         known (List[int]): The ground truth; List of indices of actual change points.
         lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
-
+        count_duplicate_detections (bool, optional): If a detected change point is not assigned to a ground truth change point, but lies within the lag window of some ground truth change point, should it be counted as a false positive (True if yes, False if no). Defaults to True.
     Returns:
         Tuple[int,int]: Tuple of: (true positives, false positives)
+
+    Examples:
+    >>> getTP_FP([1000,1001,2000], [1000,2000], 200, True)
+    >>> (2,1)
+
+    >>> getTP_FP([1000,1001,2000], [1000,2000], 200, False)
+    >>> (2,0)
     """
     assignments = assign_changepoints(detected, known, lag_window=lag)
+
     TP = len(assignments) # Every assignment is a True Positive, and every detected point is assigned at most once
-    FP = len(detected) - TP
+    if count_duplicate_detections:
+        FP = len(detected) - TP
+    else:
+        true_positive_candidates = [d for d in detected if any((k-lag <= d and d <= k+lag) for k in known)] # Detections that are in range of a 
+        FP = len(detected) - len(true_positive_candidates)
     return (TP,FP)
 
-def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_division=np.NaN)->Tuple[float, float]:
+def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_division=np.NaN, count_duplicate_detections:bool = True)->Tuple[Union[float,np.NaN], Union[float,np.NaN]]:
     """Calculates the precision and recall, using `get_TP_FP` for True positives and False Negatives, which uses assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
@@ -36,14 +48,15 @@ def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_divis
         known (List[int]): The ground truth; List of indices of actual change points.
         lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         zero_division (Any, optional): The value to yield for precision/recall when a zero-division is encountered. Defaults to np.NaN.
+        count_duplicate_detections (bool, optional): If a detected change point is not assigned to a ground truth change point, but lies within the lag window of some ground truth change point, should it be counted as a false positive (True if yes, False if no). Defaults to True.
 
     Returns:
-        Tuple[Union[float,np.NaN], Union[float,np.NaN]]: _description_
+        Tuple[Union[float,np.NaN], Union[float,np.NaN]]: A tuple (precision, recall).
     """
 
-    TP, _ = getTP_FP(detected, known, lag)
-    if(len(detected) > 0):
-        precision = TP/len(detected)
+    TP, FP = getTP_FP(detected, known, lag, count_duplicate_detections)
+    if(TP+FP > 0):
+        precision = TP/(TP+FP)
     else:
         precision = zero_division
     if(len(known) > 0):
@@ -52,7 +65,7 @@ def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_divis
         recall = zero_division
     return (precision, recall)
 
-def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn", verbose:bool=False):
+def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn", verbose:bool=False, count_duplicate_detections:bool=True) -> float:
     """ Calculates the F1 Score for a Changepoint Detection Result
 
     - Considering a known changepoint at timepoint t:
@@ -68,27 +81,23 @@ def F1_Score(detected:List[int], known: List[int], lag:int, zero_division="warn"
         lag (int): The maximal distance a detected change point can have to an actual change point, whilst still counting as a true positive.
         zero_division (str, optional): The return value if the calculation of precision/recall/F1 divides by 0. If set to "warn", 0 is returned and a warning is printed out. Defaults to "warn".
         verbose (bool, optional): If verbose, warning messages are printed when a zero-division is encountered. Defaults to False.
+        count_duplicate_detections (bool, optional): If a detected change point is not assigned to a ground truth change point, but lies within the lag window of some ground truth change point, should it be counted as a false positive (True if yes, False if no). Defaults to True.
 
     Returns:
         float: The F1-Score corresponding to the given prediction.
     """
 
-    TP, _ = getTP_FP(detected, known, lag)
-
-    if len(detected) == 0 or len(known) == 0: # Divide by zero
-        if zero_division == "warn" and verbose:
-            print("Calculation of F1-Score divided by 0 at calculation of Precision or Recall due to no Changepoints Detected or no Changepoints Existing.")
-        return zero_division
-    else:
-        precision = TP / len(detected)
+    TP, FP = getTP_FP(detected, known, lag, count_duplicate_detections)
+    try:
+        precision = TP / (TP+FP)
         recall = TP / len(known)
-    if precision + recall == 0: # Divide by zero
+
+        f1_score = (2*precision*recall)/(precision+recall)
+        return f1_score
+    except ZeroDivisionError:
         if zero_division == "warn" and verbose:
-            print("Calculation of F1-Score divided by 0 at calculation of F1 Score because Precision and Recall are both 0.")
+            print("Calculation of F1-Score resulted in division by 0.")
         return zero_division
-    else:
-        f1 = (2*precision*recall)/(precision+recall)
-        return f1
 
 # Alias for F1_Score
 f1 = F1_Score
