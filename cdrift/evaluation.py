@@ -2,7 +2,7 @@
 ############ Evaluation Metrics ###############
 ###############################################
 
-from typing import Dict, List, Tuple, Any, Union
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ def getTP_FP(detected:List[int], known:List[int], lag:int, count_duplicate_detec
         FP = len(detected) - len(true_positive_candidates)
     return (TP,FP)
 
-def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_division=np.NaN, count_duplicate_detections:bool = True)->Tuple[Union[float,np.NaN], Union[float,np.NaN]]:
+def calcPrecisionRecall(detected:List[int], known:List[int], lag:int, zero_division=np.NaN, count_duplicate_detections:bool = True)->Tuple[float, float]:
     """Calculates the precision and recall, using `get_TP_FP` for True positives and False Negatives, which uses assign_changepoints to calculate the assignments of detected change point to actual change point.
 
     Args:
