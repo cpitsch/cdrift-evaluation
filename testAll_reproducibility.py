@@ -158,6 +158,7 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
             'F1-Score': evaluation.F1_Score(detected=cp_j, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_j, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_J,
+            'Duration (Seconds)': j_dur,
             'Seconds per Case': j_dur / len(log)
         }
         entries.append(new_entry_j)
@@ -180,6 +181,7 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
             'F1-Score': evaluation.F1_Score(detected=cp_wc, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_wc, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_WC,
+            'Duration (Seconds)': wc_dur,
             'Seconds per Case': wc_dur / len(log)
         }
         entries.append(new_entry_wc)
@@ -213,6 +215,7 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
             'F1-Score': evaluation.F1_Score(detected=rb_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_J,
+            'Duration (Seconds)': j_dur,
             'Seconds per Case': j_dur / len(log)
         }
         entries.append(new_entry_j)
@@ -234,6 +237,7 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
             'F1-Score': evaluation.F1_Score(detected=rb_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=rb_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_WC,
+            'Duration (Seconds)': wc_dur,
             'Seconds per Case': wc_dur / len(log)
         }
         entries.append(new_entry_wc)
@@ -272,6 +276,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
             'F1-Score': evaluation.F1_Score(detected=adwin_j_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_j_cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_J,
+            'Duration (Seconds)': j_dur,
             'Seconds per Case': j_dur / len(log)
         }
         entries.append(new_entry_j)
@@ -295,6 +300,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
             'F1-Score': evaluation.F1_Score(detected=adwin_wc_cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=adwin_wc_cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr_WC,
+            'Duration (Seconds)': wc_dur,
             'Seconds per Case': wc_dur / len(log)
         }
         entries.append(new_entry_wc)
@@ -335,6 +341,7 @@ def testEarthMover(filepath, window_size, step_size, F1_LAG, cp_locations, posit
         'F1-Score': evaluation.F1_Score(detected=cp_em, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_em, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr,
+        'Duration (Seconds)': (endTime-startTime),
         'Seconds per Case': (endTime-startTime) / len(log)
     }
 
@@ -369,6 +376,7 @@ def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, positio
         'F1-Score': evaluation.F1_Score(detected=cp_runs, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_runs, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr,
+        'Duration (Seconds)': (endTime-startTime),
         'Seconds per Case': (endTime-startTime) / len(log)
     }
     
@@ -401,6 +409,7 @@ def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locati
         'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr,
+        'Duration (Seconds)': (endTime-startTime),
         'Seconds per Case': (endTime-startTime) / len(log)
     }
 
@@ -438,6 +447,7 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
             'F1-Score': evaluation.F1_Score(detected=cp, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
             'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp, actual_changepoints=cp_locations, lag=F1_LAG),
             'Duration': durStr,
+            'Duration (Seconds)': (endTime-startTime),
             'Seconds per Case': (endTime-startTime) / len(log)
         }
         ret.append(new_entry)
@@ -472,6 +482,7 @@ def testLCDD(filepath, complete_window_size, detection_window_size, stable_perio
         'F1-Score': evaluation.F1_Score(detected=cp_lcdd, known=cp_locations, lag=F1_LAG, zero_division=np.NaN),
         'Average Lag': evaluation.get_avg_lag(detected_changepoints=cp_lcdd, actual_changepoints=cp_locations, lag=F1_LAG),
         'Duration': durStr,
+        'Duration (Seconds)': (endTime-startTime),
         'Seconds per Case': (endTime-startTime) / len(log)
     }
     
@@ -561,9 +572,9 @@ def main():
         for mrid in mrids
     ]
 
-    # Special Parameters for LCDD
-    stable_periods = [10,20,30]
-    # TODO: Complete-Window- and Detection-Window Sizes; For now, I am only using equal windows, taken from windowSizes.
+    # Special Parameters for LCDD: Using the same parameter spaces as the paper.
+    lcdd_winsizes = [100, 200, 300, 400, 600, 800, 1200] # We select the complete window size and detection window size to be equal, as the paper suggests
+    stable_periods = [5, 10, 20, 50, 100, 150, 200]
     SW_STEP_SIZES = [2]
 
     bose_args             =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES                    ]
@@ -573,7 +584,7 @@ def main():
     maaradji_args         =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes for step_size in SW_STEP_SIZES                    ]
     pgraph_args           =  [(path, w_min, w_max, pval,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
     zhengDBSCAN_args      =  [(path, mrid,    epsList,                F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                                                      ]
-    lcdd_args             =  [(path, winSize, winSize, stable_period, F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for stable_period in stable_periods               ]
+    lcdd_args             =  [(path, winSize, winSize, stable_period, F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in lcdd_winsizes     for stable_period in stable_periods               ]
 
     arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
         + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
