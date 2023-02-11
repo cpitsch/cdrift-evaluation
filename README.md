@@ -131,5 +131,7 @@ precision, recall = evaluation.calcPrecision_Recall(detected_cps, known_cps, lag
 avg_lag = evaluation.get_avg_lag(detected_cps, known_cps, lag=lag_window)
 ```
 
+### Full Evaluation ###
+
 - The full evaluation for multiple algorithms, multiple parameter settings, and multiple event logs is performed by running the [evaluation notebook](./evaluate_results.ipynb).
 - This takes the [algorithm_results.csv](./algorithm_results.csv) file as input and generates the folder [Evaluation_Results](./Evaluation_Results) containing the evaluation results.
