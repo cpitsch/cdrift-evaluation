@@ -116,7 +116,9 @@ log = read_xes(PATH_TO_LOG) # Import the Log
 changepoints = lcdd.calculate(log, complete_window_size, detection_window_size, stable_period)
 ```
 ## Evaluation ##
-- Evaluation for specific instances is performed using [`evaluation.py`](./cdrift/evaluation.py):
+### Evaluating Isolated Results ###
+- For a single execution of an algorithm on a single event log, a simple evaluation can be performed using functions from  [`evaluation.py`](./cdrift/evaluation.py):
+
 ```python
 from cdrift import evaluation
 f1 = evaluation.F1_Score(detected_cps, known_cps, lag_window)# Calculate F1-Score
@@ -125,4 +127,9 @@ tp, fp = evaluation.getTP_FP(detected_cps, known_cps, lag_window) # Calculate Tr
 # Or:
 from numpy import NaN
 precision, recall = evaluation.calcPrecision_Recall(detected_cps, known_cps, lag_window, zero_division=NaN) # Calculate Precision/Recall
+# Or:
+avg_lag = evaluation.get_avg_lag(detected_cps, known_cps, lag=lag_window)
 ```
+
+- The full evaluation for multiple algorithms, multiple parameter settings, and multiple event logs is performed by running the [evaluation notebook](./evaluate_results.ipynb).
+- This takes the [algorithm_results.csv](./algorithm_results.csv) file as input and generates the folder [Evaluation_Results](./Evaluation_Results) containing the evaluation results.
