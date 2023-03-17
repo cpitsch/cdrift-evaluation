@@ -1,18 +1,14 @@
 from typing import List
-import pm4py
-from pm4py.algo.filtering.log import timestamp
+from pm4py import filter_time_range
 import pm4py.objects.log.util.sorting as sort
-from pm4py.algo.filtering.log.timestamp import timestamp_filter
-from pm4py.objects.log.obj import EventLog, Event, Trace
+from pm4py.objects.log.obj import EventLog
 import pm4py.util.xes_constants as xes 
 
 import datetime
 
 import math
 
-from cdrift.utils.helpers import _dateToDatetime, makeProgressBar
-
-import pkgutil
+from cdrift.utils.helpers import _dateToDatetime, makeProgressBar, safe_update_bar
 
 def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
     """Divide the given log into sublogs where their cases are trimmed to contain only the events that occur in the corresponding Time Window
@@ -37,18 +33,17 @@ def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelt
 
     num_windows = math.ceil((end-start).days / interval.days)+1
 
-    progress=None
-    if pkgutil.find_loader("tqdm") and show_progress_bar:
-        from tqdm.auto import tqdm
-        progress = tqdm(total=num_windows, desc="dividing log, completed time windows :: ")
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(num_windows, "dividing log, completed time windows")
 
     res = []
     for i in range(0,num_windows):
         window_start = _dateToDatetime(start.date()) + (i*interval)
         window_end = _dateToDatetime(start.date()) + ((i+1)*interval)
-        res.append(timestamp_filter.apply_events(log, window_start.strftime("%Y-%m-%d %H:%M:%S"), window_end.strftime("%Y-%m-%d %H:%M:%S")))
-        if progress is not None:
-            progress.update()
+        filtered = filter_time_range(log, window_start.strftime("%Y-%m-%d %H:%M:%S"), window_end.strftime("%Y-%m-%d %H:%M:%S"), mode="events")
+        res.append(filtered)
+        safe_update_bar(progress)
     return res
 
 def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
@@ -74,19 +69,16 @@ def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.tim
 
     num_windows = math.ceil((end-start).days / interval.days)+1
 
-    if pkgutil.find_loader("tqdm") and show_progress_bar:
-        from tqdm.auto import tqdm
-        progress = tqdm(total=num_windows, desc="dividing log, completed time windows :: ")
+    if show_progress_bar:
+        progress = makeProgressBar(num_windows, "dividing log, completed time windows")
 
     res = []
     for i in range(0,num_windows):
         window_start = _dateToDatetime(start.date()) + (i*interval)
         window_end = _dateToDatetime(start.date()) + ((i+1)*interval)
-        filtered = timestamp_filter.filter_traces_intersecting(log, window_start.strftime("%Y-%m-%d %H:%M:%S"), window_end.strftime("%Y-%m-%d %H:%M:%S"));
+        filtered = filter_time_range(log, window_start.strftime("%Y-%m-%d %H:%M:%S"), window_end.strftime("%Y-%m-%d %H:%M:%S"), mode="traces_intersecting")
         res.append(filtered)
-        
-        if progress is not None:
-            progress.update()
+        safe_update_bar(progress)
     return res
 
 
