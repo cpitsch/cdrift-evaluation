@@ -10,7 +10,7 @@ import math
 
 from cdrift.utils.helpers import _dateToDatetime, makeProgressBar, safe_update_bar
 
-def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY, show_progress_bar:bool=True)-> List[EventLog]:
     """Divide the given log into sublogs where their cases are trimmed to contain only the events that occur in the corresponding Time Window
 
     Args:
@@ -18,7 +18,6 @@ def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelt
         isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
         interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
         timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
-        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
         show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
 
     Returns:
@@ -46,7 +45,7 @@ def divideLogTrim(log: EventLog, isSorted:bool=False, interval:datetime.timedelt
         safe_update_bar(progress)
     return res
 
-def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY, show_progress_bar:bool=True)-> List[EventLog]:
     """Divide an event log into sublogs which contain those cases which intersect with the respective time interval. For this reason, cases can be represented in multiple sublogs.
 
     Args:
@@ -54,7 +53,6 @@ def divideLogIntersect(log: EventLog, isSorted:bool=False, interval:datetime.tim
         isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
         interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
         timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
-        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
         show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
 
     Returns:
@@ -99,10 +97,10 @@ def divideLogCaseGroups(log: EventLog, groupSize:int, isSorted:bool=False, times
         log = sort.sort_timestamp(log, timestamp_key=timestamp_key)
 
     num_groups = math.ceil(len(log)/groupSize)
-    if pkgutil.find_loader("tqdm") and show_progress_bar:
-        from tqdm.auto import tqdm
-        progress = tqdm(total=num_groups, desc="dividing log, completed groups :: ")
-    
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(num_groups, "dividing log, completed groups")
+
     # The following would in theory work, but does not preserve the attributes of the log itself
         #logs = [EventLog(log[i:i+groupSize]) for i in range(0, len(log), groupSize)]
     # So instead create a deep copy and then overwrite the list of traces.
@@ -118,7 +116,7 @@ def divideLogCaseGroups(log: EventLog, groupSize:int, isSorted:bool=False, times
             progress.update()
     return logs
 
-def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY,  truncateStartDate:bool=False, show_progress_bar:bool=True)-> List[EventLog]:
+def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.timedelta=datetime.timedelta(days=1), timestamp_key:str=xes.DEFAULT_TIMESTAMP_KEY, show_progress_bar:bool=True)-> List[EventLog]:
     """Divide the event log into sublogs where a case is associated to the time window in which its first event began
 
     Args:
@@ -126,7 +124,6 @@ def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.tim
         isSorted (bool, optional): Flag indicating if the event log is sorted by starting timestamp. Defaults to False.
         interval (datetime.timedelta, optional): Time Interval indicating how long one sublog should be. Defaults to datetime.timedelta(days=1).
         timestamp_key (str, optional): The key for the timestamp value in the event log. Defaults to xes.DEFAULT_TIMESTAMP_KEY.
-        truncateStartDate (bool, optional): True if the start date should be treated only up to the level of the day, otherwise exact (as exact as given by the log). Defaults to False.
         show_progress_bar (bool, optional): Configures whether a progress bar should be shown. Defaults to True.
 
     Returns:
@@ -142,7 +139,10 @@ def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.tim
 
     num_windows = math.ceil((log_end-log_start).days / interval.days)+1
 
-    progress = makeProgressBar(num_iters=len(log), message="dividing log, cases assigned to time window")
+    progress = None
+    if show_progress_bar:
+        progress = makeProgressBar(num_iters=len(log), message="dividing log, cases assigned to time window")
+
     empty_log = log.__copy__()
     empty_log._list = []
     res = [empty_log for i in range(num_windows)]
@@ -154,8 +154,7 @@ def divideLogStartTime(log: EventLog, isSorted:bool=False, interval:datetime.tim
         windows_ellapsed = since_log_start // interval
         # E.g. less than a day is ellapsed, then this division yields 0. i.e. it should be in the first window, i.e. index=0
         res[windows_ellapsed].append(case)
-        if progress is not None:
-            progress.update()
+        safe_update_bar(progress)
 
     # Add metadata to each sublog, telling the time window it corresponds to
     for index, log in enumerate(res):
