@@ -26,7 +26,6 @@ from cdrift.utils import helpers
 #Misc
 import os
 from datetime import datetime
-from colorama import Fore
 from tqdm import tqdm
 from pathlib import Path
 from itertools import product
@@ -620,7 +619,7 @@ def main():
     elapsed_time = math.floor(default_timer() - time_start)
     # Write instead of print because of progress bars (although it shouldnt be a problem because they are all done)
     elapsed_formatted = datetime.strftime(datetime.utcfromtimestamp(elapsed_time), '%H:%M:%S')
-    tqdm.write(f"{Fore.GREEN}The execution took {elapsed_formatted}{Fore.WHITE}")
+    tqdm.write(f"The execution took {elapsed_formatted}")
 
 
     flattened_results = [res for function_return in results for res in function_return]
