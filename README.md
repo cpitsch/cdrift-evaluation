@@ -1,7 +1,7 @@
 # Concept Drift Evaluation #
 - The results for each algorithm and parameter setting can be found in [`algorithm_results.csv`](./algorithm_results.csv).
 - The resulting evaluation measures (for a Lag Window of `200`) as described in the paper are listed in [`evaluation_measures200.csv`](./Evaluation_Results/evaluation_measures200.csv).
-- The corresponding figures for the individial evaluation measures are in the [`Evaluation_Results`](./Evaluation_Results/) folder.
+- The corresponding figures for the individual evaluation measures are in the [`Evaluation_Results`](./Evaluation_Results/) folder.
 
 # Usage #
 The required packages can be installed using anaconda: 

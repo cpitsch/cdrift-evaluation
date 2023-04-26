@@ -518,7 +518,9 @@ def testSomething(arg):
     elif name == Approaches.LCDD:
         return testLCDD(*arguments, position=idx, show_progress_bar=show_bar)
 
-def main():
+def main(test_run:bool = False, num_cores:int = None):
+    if num_cores is None:
+        num_cores = NUM_CORES
     #Evaluation Parameters
     F1_LAG = 200
 
@@ -585,16 +587,35 @@ def main():
     zhengDBSCAN_args      =  [(path, mrid,    epsList,                F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                                                      ]
     lcdd_args             =  [(path, winSize, winSize, stable_period, F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in lcdd_winsizes     for stable_period in stable_periods               ]
 
-    arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
-        + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
-        + ([ (Approaches.MAARADJI, args)           for args in maaradji_args            ] if DO_APPROACHES[Approaches.MAARADJI          ]         else [])
-        + ([ (Approaches.PROCESS_GRAPHS, args)     for args in pgraph_args              ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS    ]         else [])
-        + ([ (Approaches.EARTHMOVER, args)         for args in em_args                  ] if DO_APPROACHES[Approaches.EARTHMOVER        ]         else [])
-        + ([ (Approaches.BOSE, args)               for args in bose_args                ] if DO_APPROACHES[Approaches.BOSE              ]         else [])
-        + ([ (Approaches.MARTJUSHEV, args)         for args in martjushev_args          ] if DO_APPROACHES[Approaches.MARTJUSHEV        ]         else [])
-        + ([ (Approaches.MARTJUSHEV_ADWIN, args)   for args in martjushev_adwin_args    ] if DO_APPROACHES[Approaches.MARTJUSHEV_ADWIN  ]         else [])
-        + ([ (Approaches.LCDD, args)               for args in lcdd_args                ] if DO_APPROACHES[Approaches.LCDD              ]         else [])
-    )
+
+    args_lists = filter(lambda x: DO_APPROACHES[x[0]], [
+        (Approaches.BOSE, bose_args),
+        (Approaches.MARTJUSHEV, martjushev_args),
+        (Approaches.MARTJUSHEV_ADWIN, martjushev_adwin_args),
+        (Approaches.EARTHMOVER, em_args),
+        (Approaches.MAARADJI, maaradji_args),
+        (Approaches.PROCESS_GRAPHS, pgraph_args),
+        (Approaches.ZHENG, zhengDBSCAN_args),
+        (Approaches.LCDD, lcdd_args)
+    ])
+
+    if test_run:
+        # Only use the first argument for each approach
+        args_lists = [(identifier, arg_list) for identifier, arg_list in args_lists]
+    
+    arguments = [(identifier, args) for identifier, arg_list in args_lists for args in arg_list]
+
+
+    # arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
+    #     + ([ (Approaches.BOSE, args)               for args in bose_args                ] if DO_APPROACHES[Approaches.BOSE              ]         else [])
+    #     + ([ (Approaches.MARTJUSHEV, args)         for args in martjushev_args          ] if DO_APPROACHES[Approaches.MARTJUSHEV        ]         else [])
+    #     + ([ (Approaches.MARTJUSHEV_ADWIN, args)   for args in martjushev_adwin_args    ] if DO_APPROACHES[Approaches.MARTJUSHEV_ADWIN  ]         else [])
+    #     + ([ (Approaches.EARTHMOVER, args)         for args in em_args                  ] if DO_APPROACHES[Approaches.EARTHMOVER        ]         else [])
+    #     + ([ (Approaches.MAARADJI, args)           for args in maaradji_args            ] if DO_APPROACHES[Approaches.MAARADJI          ]         else [])
+    #     + ([ (Approaches.PROCESS_GRAPHS, args)     for args in pgraph_args              ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS    ]         else [])
+    #     + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
+    #     + ([ (Approaches.LCDD, args)               for args in lcdd_args                ] if DO_APPROACHES[Approaches.LCDD              ]         else [])
+    # )
 
     # Shuffle the Tasks
     np.random.shuffle(arguments)
