@@ -601,7 +601,7 @@ def main(test_run:bool = False, num_cores:int = None):
 
     if test_run:
         # Only use the first argument for each approach
-        args_lists = [(identifier, arg_list) for identifier, arg_list in args_lists]
+        args_lists = [(identifier, arg_list[:1]) for identifier, arg_list in args_lists]
     
     arguments = [(identifier, args) for identifier, arg_list in args_lists for args in arg_list]
 
