@@ -1,0 +1,66 @@
+approaches:
+  Bose:
+    function: "testBose"
+    enabled: True
+    meta-params:
+      do_j: True
+      do_wc: True
+    params:
+      window_size: &winsizes [100, 200, 300, 400, 500, 600]
+      step_size: &sw_stepsizes [2]
+  Martjushev:
+    function: "testMartjushev"
+    enabled: False
+    meta-params:
+      do_j: True # True, but doesn't matter since enabled=False
+      do_wc: False
+    params:
+      window_size: *winsizes
+  Martjushev ADWIN:
+    function: "testMartjushev_ADWIN"
+    enabled: True
+    meta-params:
+      do_j: True
+      do_wc: False
+    params:
+      min_max_window_pair: &min_max_win_pair [
+        [100, 400], [100,500], [100, 600], [100,700],
+        [200, 400], [200,500], [200, 600], [200,700],
+        [300, 400], [300,500], [300, 600], [300,700],
+        [400, 400], [400,500], [400, 600], [400,700],
+      ]
+      pvalue: [0.4]
+      step_size: &stepsizes [10, 20, 50]
+  Earthmover:
+    function: "testEarthMover"
+    enabled: True
+    params:
+      window_size: *winsizes
+      step_size: *sw_stepsizes
+  Maaradji:
+    function: "testMaaradji"
+    enabled: True
+    params:
+      window_size: [50, 100, 150, 200, 250, 300]
+      step_size: *sw_stepsizes
+  ProcessGraph:
+    function: "testGraphMetrics"
+    enabled: True
+    params:
+      min_max_window_pair: *min_max_win_pair
+      pvalue: [0.1, 0.05, 0.005, 0.0001]
+  Zheng:
+    function: "testZhengDBSCAN"
+    enabled: True
+    params:
+      mrid: [300, 400, 500, 600, 700, 800]
+      eps_modifiers: [[0.1, 0.2, 0.3, 0.4, 0.5]] # Has to be double list to signify that this is a single parameter, not a list of possible params
+  LCDD:
+    function: "testLCDD"
+    enabled: True
+    params:
+      stable_period: [5, 10, 20, 50, 100, 150, 200]
+      window_pairs: [[100, 100], [200, 200], [300, 300], [400, 400], [600, 600], [800, 800], [1200, 1200]]
+meta-parameters:
+  F1_LAG: 200
+  DO_SINGLE_BAR: True

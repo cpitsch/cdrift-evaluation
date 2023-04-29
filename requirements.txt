@@ -11,3 +11,4 @@ kaleido==0.0.3
 nbformat==5.5.0
 seaborn==0.12.0
 ipykernel==6.22.0
+pyyaml==6.0

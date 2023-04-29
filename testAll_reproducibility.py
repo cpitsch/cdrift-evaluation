@@ -1,4 +1,3 @@
-import enum
 import math
 from multiprocessing import Pool, RLock, freeze_support, cpu_count
 from timeit import default_timer
@@ -7,15 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-
+# CDrift Approaches
 from cdrift.approaches import earthmover, bose, martjushev, lcdd
-
 #Maaradji
 from cdrift.approaches import maaradji as runs
-
 # Zheng
 from cdrift.approaches.zheng import applyMultipleEps
-
 #Process Graph CPD
 from cdrift.approaches import process_graph_metrics as pm
 
@@ -29,51 +25,7 @@ from datetime import datetime
 from tqdm import tqdm
 from pathlib import Path
 from itertools import product
-
-# Enum of approaches
-class Approaches(enum.Enum):
-    BOSE = "Bose"
-    MARTJUSHEV = "Martjushev"
-    MARTJUSHEV_ADWIN = "Martjushev ADWIN"
-    EARTHMOVER = "Earthmover"
-    MAARADJI = "Maaradji"
-    PROCESS_GRAPHS = "ProcessGraph"
-    ZHENG = "Zheng"
-    LCDD = "LCDD"
-
-
-#################################
-############ SETTINGS ###########
-#################################
-
-# Which appraoches to test
-DO_APPROACHES = {
-    Approaches.BOSE: True,
-    Approaches.MARTJUSHEV: False, # Replaced by ADWIN
-    Approaches.MARTJUSHEV_ADWIN: True,
-    Approaches.EARTHMOVER: True,
-    Approaches.MAARADJI: True,
-    Approaches.PROCESS_GRAPHS: True,
-    Approaches.ZHENG: True,
-    Approaches.LCDD: True
-}
-
-# Which specific sub-approaches to test (if the approach itself is tested)
-BOSE_DO_J = True
-BOSE_DO_WC = True
-MARTJUSHEV_DO_J = True   # Both "normal" martjushev will not be executed in current configuration as we test ADWIN
-MARTJUSHEV_DO_WC = False
-MARTJUSHEV_ADWIN_DO_J = True
-MARTJUSHEV_ADWIN_DO_WC = False # We replace Martjushev WC by LCDD in the final evaluation
-
-# Use a single bar for all (Showing how many algorithm applications are finished) or separate bars for each PCD instance
-DO_SINGLE_BAR = True
-
-# Take the results and make a pareto front from it
-DO_PARETO_FRONT = False
-
-# Number of cores to use for the multiprocessing
-NUM_CORES = cpu_count() - 2
+import yaml
 
 #################################
 ############ HELPERS ############
@@ -131,7 +83,7 @@ def plotPvals(pvals, changepoints, actual_changepoints, path, xlabel="", ylabel=
 ##### Evaluation Functions ######
 #################################
 
-def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, do_j:bool=True, do_wc:bool=True, position=None, show_progress_bar=True):
     j_dur = 0
     wc_dur = 0
 
@@ -139,7 +91,7 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
     logname = filepath.split('/')[-1].split('.')[0]
     entries = []
 
-    if BOSE_DO_J:
+    if do_j:
         j_start = default_timer()
         pvals_j = bose.detectChange_JMeasure_KS_Step(log, window_size, step_size=step_size, show_progress_bar=show_progress_bar, progressBarPos=position)
         cp_j = bose.visualInspection_Step(pvals_j, window_size, step_size)
@@ -162,7 +114,7 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
         }
         entries.append(new_entry_j)
 
-    if BOSE_DO_WC:
+    if do_wc:
         wc_start = default_timer()
         pvals_wc = bose.detectChange_WC_KS_Step(log, window_size, step_size=step_size, show_progress_bar=show_progress_bar, progressBarPos=position)
         cp_wc = bose.visualInspection_Step(pvals_wc, window_size, step_size)
@@ -186,18 +138,18 @@ def testBose(filepath, window_size, step_size, F1_LAG, cp_locations, position=No
         entries.append(new_entry_wc)
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.BOSE.value,f"{logname}_WIN{window_size}.csv"), index=False)
+        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", "Bose",f"{logname}_WIN{window_size}.csv"), index=False)
 
     return entries
 
-def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testMartjushev(filepath, window_size, F1_LAG, cp_locations, do_j:bool=True, do_wc:bool=True, position=None, show_progress_bar=True):
     PVAL = 0.55
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
     entries = []
 
-    if MARTJUSHEV_DO_J:
+    if do_j:
         j_start = default_timer()
         rb_j_cp = martjushev.detectChange_JMeasure_KS(log, window_size, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
         j_dur = default_timer() - j_start
@@ -219,7 +171,7 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
         }
         entries.append(new_entry_j)
 
-    if MARTJUSHEV_DO_WC:
+    if do_wc:
         wc_start = default_timer()
         rb_wc_cp = martjushev.detectChange_WindowCount_KS(log, window_size, PVAL, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
         wc_dur = default_timer() - wc_start
@@ -242,11 +194,13 @@ def testMartjushev(filepath, window_size, F1_LAG, cp_locations, position=None, s
         entries.append(new_entry_wc)
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV.value, f"{logname}_WIN{window_size}.csv"), index=False)
+        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", "Martjushev", f"{logname}_WIN{window_size}.csv"), index=False)
     return entries
 
-def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testMartjushev_ADWIN(filepath, min_max_window_pair, pvalue, step_size, F1_LAG, cp_locations, do_j:bool=True, do_wc:bool=True, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
+
+    min_window, max_window = min_max_window_pair
 
     if len(log) <= min_window:
         # If the log is too short, we can't use the ADWIN algorithm because even the initial windows do not fit
@@ -256,7 +210,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
 
     entries = []
 
-    if MARTJUSHEV_ADWIN_DO_J:
+    if do_j:
         j_start = default_timer()
         adwin_j_cp = martjushev.detectChange_ADWIN_JMeasure_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
         j_dur = default_timer() - j_start
@@ -280,7 +234,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         }
         entries.append(new_entry_j)
 
-    if MARTJUSHEV_ADWIN_DO_WC:
+    if do_wc:
         wc_start = default_timer()
         adwin_wc_cp = martjushev.detectChange_ADWIN_WindowCount_KS(log, min_window, max_window, pvalue, step_size, return_pvalues=False, show_progress_bar=show_progress_bar, progressBarPos=position)
         wc_dur = default_timer() - wc_start
@@ -305,7 +259,7 @@ def testMartjushev_ADWIN(filepath, min_window, max_window, pvalue, step_size, F1
         entries.append(new_entry_wc)
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MARTJUSHEV_ADWIN.value, f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
+        pd.DataFrame(entries).to_csv(Path("Reproducibility_Intermediate_Results", "Martjushev ADWIN", f"{logname}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
 
     return entries
 
@@ -345,7 +299,7 @@ def testEarthMover(filepath, window_size, step_size, F1_LAG, cp_locations, posit
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.EARTHMOVER.value, f"{logname}_WIN{window_size}.csv"), index=False)
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", "Earthmover", f"{logname}_WIN{window_size}.csv"), index=False)
 
     return [new_entry]
 
@@ -380,12 +334,14 @@ def testMaaradji(filepath, window_size, step_size, F1_LAG, cp_locations, positio
     }
     
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.MAARADJI.value, f"{logname}_WIN{window_size}.csv"), index=False)
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", "Maaradji", f"{logname}_WIN{window_size}.csv"), index=False)
     return [new_entry]
 
-def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locations, position=None, show_progress_bar=True):
+def testGraphMetrics(filepath, min_max_window_pair, pvalue, F1_LAG, cp_locations, position=None, show_progress_bar=True):
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
+
+    min_window, max_window = min_max_window_pair
 
     startTime = default_timer()
 
@@ -413,11 +369,14 @@ def testGraphMetrics(filepath, min_window, max_window, pvalue, F1_LAG, cp_locati
     }
 
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.PROCESS_GRAPHS.value, f"{logname}_P{pvalue}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", "ProcessGraph", f"{logname}_P{pvalue}_MINW{min_window}_MAXW{max_window}.csv"), index=False)
     return [new_entry]
 
-def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testZhengDBSCAN(filepath, mrid, eps_modifiers, F1_LAG, cp_locations, position, show_progress_bar=True):
     # candidateCPDetection is independent of eps, so we can calculate the candidates once and use them for multiple eps!
+    epsList = [mrid*meps for meps in eps_modifiers]
+
+
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
 
@@ -452,10 +411,12 @@ def testZhengDBSCAN(filepath, mrid, epsList, F1_LAG, cp_locations, position, sho
         ret.append(new_entry)
     if os.path.exists("Reproducibility_Intermediate_Results"):
         for entry in ret:
-            pd.DataFrame([entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.ZHENG.value, f"{logname}_MRID{mrid}_EPS{str(entry['Epsilon']).replace('.','_')}.csv"), index=False)
+            pd.DataFrame([entry]).to_csv(Path("Reproducibility_Intermediate_Results", "Zheng", f"{logname}_MRID{mrid}_EPS{str(entry['Epsilon']).replace('.','_')}.csv"), index=False)
     return ret
 
-def testLCDD(filepath, complete_window_size, detection_window_size, stable_period, F1_LAG, cp_locations, position, show_progress_bar=True):
+def testLCDD(filepath, window_pairs, stable_period, F1_LAG, cp_locations, position, show_progress_bar=True):
+
+    complete_window_size, detection_window_size = window_pairs
 
     log = helpers.importLog(filepath, verbose=False)
     logname = filepath.split('/')[-1].split('.')[0]
@@ -474,7 +435,7 @@ def testLCDD(filepath, complete_window_size, detection_window_size, stable_perio
         'Log Source': Path(filepath).parent.name,
         'Log': logname,
         'Complete-Window Size': complete_window_size,
-        'Detection-Window Size': detection_window_size, # TODO: Decide if CW and DW should be equal in all tests
+        'Detection-Window Size': detection_window_size,
         'Stable Period': stable_period,
         'Detected Changepoints': cp_lcdd,
         'Actual Changepoints for Log': cp_locations,
@@ -486,48 +447,20 @@ def testLCDD(filepath, complete_window_size, detection_window_size, stable_perio
     }
     
     if os.path.exists("Reproducibility_Intermediate_Results"):
-        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", Approaches.LCDD.value, f"{logname}_CW{complete_window_size}_DW{detection_window_size}_SP{stable_period}.csv"), index=False)
+        pd.DataFrame([new_entry]).to_csv(Path("Reproducibility_Intermediate_Results", "LCDD", f"{logname}_CW{complete_window_size}_DW{detection_window_size}_SP{stable_period}.csv"), index=False)
     return [new_entry]
 
-
-def testSomething(arg):
+def callFunction(arg):
     """Wrapper for testing functions, as for the multiprocessing pool, one can only use one function, not multiple
 
     Args:
         idx (int): Position-Index for the progress bar of the evaluation
         vals (Tuple[str,List]): Tuple of name of the approach, and its parameter values
     """
+    funcname, args = arg
+    return globals()[funcname](**args)
 
-    idx, vals, show_bar = arg
-
-    name, arguments = vals
-    if name == Approaches.BOSE:
-        return testBose(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.MARTJUSHEV:
-        return testMartjushev(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.MARTJUSHEV_ADWIN:
-        return testMartjushev_ADWIN(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.EARTHMOVER:
-        return testEarthMover(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.MAARADJI:
-        return testMaaradji(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.PROCESS_GRAPHS:
-        return testGraphMetrics(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.ZHENG:
-        return testZhengDBSCAN(*arguments, position=idx, show_progress_bar=show_bar)
-    elif name == Approaches.LCDD:
-        return testLCDD(*arguments, position=idx, show_progress_bar=show_bar)
-
-def main(test_run:bool = False, num_cores:int = None):
-    if num_cores is None:
-        num_cores = NUM_CORES
-    #Evaluation Parameters
-    F1_LAG = 200
-
-    for approach, do in DO_APPROACHES.items():
-        if do:
-            Path("Reproducibility_Intermediate_Results", approach.value).mkdir(parents=True, exist_ok=True)
-
+def get_logpaths_with_changepoints():
     # Setup all Paths to logs alongside their change point locations
     logPaths_Changepoints = [
         (Path("EvaluationLogs","Bose", "bose_log.xes.gz").as_posix(), [1199, 2399, 3599, 4799]), # A change every 1200 cases, 6000 cases in total (Skipping 5999 because a change on the last case doesnt make sense)
@@ -546,93 +479,78 @@ def main(test_run:bool = False, num_cores:int = None):
         for item in Path("EvaluationLogs","Ostovar").iterdir()
     ]
 
-    # Parameter Settings #
-    # Window Sizes that we test
-    windowSizes       = [100, 200, 300, 400, 500,  600]
-    maaradji_winsizes = [50, 100, 150, 200, 250, 300            ]
-    
-    # Parameters for Adaptive Window Approaches
-    min_window_sizes = [100,200,300,400]
-    max_window_sizes = [400,500,600,700]
-    window_pairs = [
-        (w_min,w_max)
-        for w_min, w_max in product(min_window_sizes, max_window_sizes)
-        if w_min <= w_max
+    return logPaths_Changepoints
+
+
+def build_arguments_list(config, logPaths_Changepoints, is_test_run=False):
+    _args = { approach["function"]: (approach.get("meta-params", dict()), approach["params"]) for approach in config["approaches"].values() if approach.get("enabled", True) == True }
+
+    arguments = []
+    for funcname, (meta_args, args) in _args.items():
+        keys, values = zip(*args.items())
+        permutations_dicts = [dict(zip(keys, v)) for v in product(*values)]
+
+        if is_test_run:
+            arguments += [(funcname, permutation | meta_args) for permutation in permutations_dicts[:1]]
+        else:
+            arguments += [(funcname, permutation | meta_args) for permutation in permutations_dicts]
+
+    if is_test_run:
+        logPaths_Changepoints = logPaths_Changepoints[:1]
+
+    meta_args = [ # Arguments that all functions take.
+        {
+            "F1_LAG": config["meta-parameters"]["F1_LAG"], # For the per-instance-F1-Score. Not relevant for evaluation anymore.
+            "filepath": logpath, # Path to the event log
+            "cp_locations": cp_locations, # List of indices of the changepoints in this event log
+            "show_progress_bar": not config["meta-parameters"]["DO_SINGLE_BAR"]
+        }
+        for logpath, cp_locations in logPaths_Changepoints
     ]
 
-    step_sizes = [10,20,50]
-    mart_pvalues = [0.4]
-    pgraph_pvalues = [0.1, 0.05, 0.005, 0.0001] #0.0001 used in the paper
-
-
-    # Special Parameters for the approach by Zheng et al.
-    mrids = [300, 400, 500, 600, 700, 800]
-    eps_modifiers = [0.1, 0.2, 0.3, 0.4, 0.5] # use x * mrid as epsilon, as the paper suggests
-    eps_mrid_pairs = [
-        (mrid,[mEps*mrid  for mEps in eps_modifiers]) 
-        for mrid in mrids
+    arguments = [
+        (funcname, arg_dict | meta_arg)
+        for funcname, arg_dict in arguments
+        for meta_arg in meta_args
     ]
-
-    # Special Parameters for LCDD: Using the same parameter spaces as the paper.
-    lcdd_winsizes = [100, 200, 300, 400, 600, 800, 1200] # We select the complete window size and detection window size to be equal, as the paper suggests
-    stable_periods = [5, 10, 20, 50, 100, 150, 200]
-    SW_STEP_SIZES = [2]
-
-    bose_args             =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES                    ]
-    martjushev_args       =  [(path, winSize,                         F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes                                                         ]
-    martjushev_adwin_args =  [(path, w_min, w_max, pval, step,        F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in mart_pvalues   for step in step_sizes ]
-    em_args               =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in windowSizes       for step_size in SW_STEP_SIZES                    ]
-    maaradji_args         =  [(path, winSize, step_size,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in maaradji_winsizes for step_size in SW_STEP_SIZES                    ]
-    pgraph_args           =  [(path, w_min, w_max, pval,              F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for w_min, w_max        in window_pairs      for pval in pgraph_pvalues                        ]
-    zhengDBSCAN_args      =  [(path, mrid,    epsList,                F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for mrid,epsList        in eps_mrid_pairs                                                      ]
-    lcdd_args             =  [(path, winSize, winSize, stable_period, F1_LAG, cp_locations)        for path, cp_locations in logPaths_Changepoints for winSize             in lcdd_winsizes     for stable_period in stable_periods               ]
-
-
-    args_lists = filter(lambda x: DO_APPROACHES[x[0]], [
-        (Approaches.BOSE, bose_args),
-        (Approaches.MARTJUSHEV, martjushev_args),
-        (Approaches.MARTJUSHEV_ADWIN, martjushev_adwin_args),
-        (Approaches.EARTHMOVER, em_args),
-        (Approaches.MAARADJI, maaradji_args),
-        (Approaches.PROCESS_GRAPHS, pgraph_args),
-        (Approaches.ZHENG, zhengDBSCAN_args),
-        (Approaches.LCDD, lcdd_args)
-    ])
-
-    if test_run:
-        # Only use the first argument for each approach
-        args_lists = [(identifier, arg_list[:1]) for identifier, arg_list in args_lists]
-    
-    arguments = [(identifier, args) for identifier, arg_list in args_lists for args in arg_list]
-
-
-    # arguments = ( [] # Empty list here so i can just comment out ones i dont want to do
-    #     + ([ (Approaches.BOSE, args)               for args in bose_args                ] if DO_APPROACHES[Approaches.BOSE              ]         else [])
-    #     + ([ (Approaches.MARTJUSHEV, args)         for args in martjushev_args          ] if DO_APPROACHES[Approaches.MARTJUSHEV        ]         else [])
-    #     + ([ (Approaches.MARTJUSHEV_ADWIN, args)   for args in martjushev_adwin_args    ] if DO_APPROACHES[Approaches.MARTJUSHEV_ADWIN  ]         else [])
-    #     + ([ (Approaches.EARTHMOVER, args)         for args in em_args                  ] if DO_APPROACHES[Approaches.EARTHMOVER        ]         else [])
-    #     + ([ (Approaches.MAARADJI, args)           for args in maaradji_args            ] if DO_APPROACHES[Approaches.MAARADJI          ]         else [])
-    #     + ([ (Approaches.PROCESS_GRAPHS, args)     for args in pgraph_args              ] if DO_APPROACHES[Approaches.PROCESS_GRAPHS    ]         else [])
-    #     + ([ (Approaches.ZHENG, args)              for args in zhengDBSCAN_args         ] if DO_APPROACHES[Approaches.ZHENG             ]         else [])
-    #     + ([ (Approaches.LCDD, args)               for args in lcdd_args                ] if DO_APPROACHES[Approaches.LCDD              ]         else [])
-    # )
-
     # Shuffle the Tasks
     np.random.shuffle(arguments)
+    # Give each task an index for progress bar (only used if DO_SINGLE_BAR is False)
+    arguments = [
+        (funcname, d | {"position": idx})
+        for idx, (funcname, d) in enumerate(arguments)
+    ]
+    return arguments
 
+
+def main(test_run:bool = False, num_cores:int = None):
+    if num_cores is None:
+        num_cores = cpu_count() - 2
+
+    logPaths_Changepoints = get_logpaths_with_changepoints()
+
+    ## Load the Arguments from testAll_config.yml ##
+    config = None
+    with open("testAll_config.yml", 'r') as stream:
+        config = yaml.safe_load(stream)
+    arguments = build_arguments_list(config, logPaths_Changepoints, is_test_run=test_run)
+
+    ## Set up File Structure
+    for approach, approach_config in config["approaches"].items():
+        if approach_config["enabled"] == True:
+            Path("Reproducibility_Intermediate_Results", approach).mkdir(parents=True, exist_ok=True)
+
+    ## Run all experiments using multiprocessing ##
     time_start = default_timer()
-
     freeze_support()  # for Windows support
     tqdm.set_lock(RLock())  # for managing output contention
     results = []
-
-    with Pool(NUM_CORES,initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as p:
-        _args = [(idx, args, not DO_SINGLE_BAR) for idx, args in enumerate(arguments)]
-        if DO_SINGLE_BAR:
-            for result in tqdm(p.imap(testSomething, _args), desc="Calculating.. Completed PCD Instances", total=len(_args)):
+    with Pool(num_cores,initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as p:
+        if config["meta-parameters"]["DO_SINGLE_BAR"]:
+            for result in tqdm(p.imap(callFunction, arguments), desc="Calculating.. Completed PCD Instances", total=len(arguments)):
                 results.append(result)
         else:
-            results = p.map(testSomething, _args)
+            results = p.map(callFunction, arguments)
 
     # Remove NaN return values from the results, source is Martjushev_ADWIN if the log is too short for the chosen windows
     results = [result for result in results if not result == np.NaN]
@@ -646,23 +564,6 @@ def main(test_run:bool = False, num_cores:int = None):
     flattened_results = [res for function_return in results for res in function_return]
     df = pd.DataFrame(flattened_results)
     df.to_csv("algorithm_results.csv", index=False)
-
-    if DO_PARETO_FRONT:
-        # Convert String Duration Column to Datetime
-        from cdrift.utils.helpers import convertToTimedelta
-        df['Duration'] = df['Duration'].apply(convertToTimedelta)
-
-        dfs = [
-            df[df['Algorithm'] == approach_name].copy(deep=True)
-            for approach_name in df["Algorithm"].unique()
-        ]
-
-        # Generate Figures for the results
-        fig = evaluation.scatter_f1_duration(dfs)
-
-        fig.savefig("pareto-front.pdf",format="pdf",bbox_inches='tight')
-        fig.savefig("pareto-front.png",format="png",bbox_inches='tight')
-        plt.close(fig)
 
 if __name__ == '__main__':
     main()
