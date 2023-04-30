@@ -135,3 +135,38 @@ avg_lag = evaluation.get_avg_lag(detected_cps, known_cps, lag=lag_window)
 
 - The full evaluation for multiple algorithms, multiple parameter settings, and multiple event logs is performed by running the [evaluation notebook](./evaluate_results.ipynb).
 - This takes the [algorithm_results.csv](./algorithm_results.csv) file as input and generates the folder [Evaluation_Results](./Evaluation_Results) containing the evaluation results.
+
+
+# Incorporating New Approaches #
+To incorporate results from your approach into the evaluation, you can either:
+
+1. Run your approach separately, and create a csv containing at minimum the columns:
+   - `Algorithm` (The algorithm name)
+   - `Log Source` (Where the log was sourced. In our case, "Ostovar", "Ceravolo", or "Bose")
+   - `Log` (The log name, e.g., "bose_log.xes.gz")
+   - `Detected Changepoints` (The indices (of cases) in the event log where changes where detected)
+   - `Actual Changepoints for Log` (The ground truth changepoint indices)
+   - `Duration (Seconds)` (The duration of the algorithm run in seconds)
+   - `Duration` (Duration as hh:mm:ss string)
+   - Columns specifying the parameter settings
+2. Append the results to the `algorithm_results.csv` file.
+
+Or:
+
+1. Add your approach to the `testAll_reproducibility.py` file.
+    1. Define a function to run your approach on a single log that returns a list of dictionaries containing the columns mentioned above.
+    2. Configure the parameters of your approach in the `testAll_config.yml` file by adding an entry to "approaches" containing:
+      - `function`: The name of the function in `testAll_reproducibility.py`
+      -  `params`: In here, list all the parameters that your function takes, specified as lists of possible values.
+
+# Docker
+
+- Additionally, a [docker image](https://hub.docker.com/r/cpitsch/cdrift-evaluation) is also provided. To use this image:
+1. Pull the image: `docker pull cpitsch/cdrift-evaluation`	
+2. Run the container with `docker run --name cdrift cpitsch/cdrift-evaluation`. Possible arguments are:
+   - `--evaluate`: Run only the evaluation script. Assumes that the algorithm results are already present in the container.
+   - `--runApproaches`: Run all the approaches (this will take a long time).
+   - `--runAndEvaluate`: Run all the approaches and then evaluate the results.
+3. After algorithm runs and/or the evaluation, the results can be retrieved from the docker container through:
+   - `docker cp cdrift:cdrift_docker/algorithm_results.csv .`
+   - `docker cp cdrift:cdrift_docker/Evaluation_Results .`
