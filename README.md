@@ -21,8 +21,8 @@ To incorporate results from your approach into the evaluation, you can either:
 Or:
 
 1. Add your approach to the `testAll_reproducibility.py` file.
-    1. Define a function to run your approach on a single log that returns a list of dictionaries containing the columns mentioned above.
-    2. Configure the parameters of your approach in the `testAll_config.yml` file by adding an entry to "approaches" containing:
+   1. Define a function to run your approach on a single log that returns a list of dictionaries containing the columns mentioned above.
+   2. Configure the parameters of your approach in the `testAll_config.yml` file by adding an entry to "approaches" containing:
       - `function`: The name of the function in `testAll_reproducibility.py`
       -  `params`: In here, list all the parameters that your function takes, specified as lists of possible values.
 
